@@ -43,7 +43,7 @@ class LlamaForCausalRAG:
                 verbose=True,  # Verbose is required to pass to the callback manager
             )
         else:
-            logger.info(f"Initialize LLM GPU")
+            logger.info(f"Initialize LLM with GPU configuration")
             return LlamaCpp(
                 model_path=path, #it is important to quantisize the model in order to use it with llamaCpp check: https://colab.research.google.com/drive/1jeb9RoOVW984EpUAA_XNu1KfoyJOCe2Q#scrollTo=xBuDTDcIvIOQ
                 #model_path="/Users/ricostaedeli/Documents/ZHAW/rag/rag_llama2/openbuddy-llama2-70b-v13.2.Q5_K_M.gguf",#it is important to quantisize the model in order to use it with llamaCpp check: https://colab.research.google.com/drive/1jeb9RoOVW984EpUAA_XNu1KfoyJOCe2Q#scrollTo=xBuDTDcIvIOQ
