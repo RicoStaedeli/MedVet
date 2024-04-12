@@ -31,18 +31,41 @@ class EmbeddingHnadler:
         pdf_directory = "../assets/Documents"
         
         logger.info(f"Generate RAG with Documents")
-        #iterate all documents in Fintuning Directory
+        # Initialize an empty string to hold the text
+        complete_text = ""
+
+        #iterate all documents in Directory
         for filename in os.listdir(pdf_directory):
             f = os.path.join(pdf_directory, filename)
             # checking if it is a file
             if os.path.isfile(f):
-                pdf_name = filename.split("\\.")[0]      
-            with fitz.open(f) as doc:  # open document
-                text = chr(12).join([page.get_text() for page in doc])
+                with fitz.open(f) as doc:  # open document
+                # Iterate through each page of the PDF
+                    for page_num in range(len(doc)):
+                        # Get the page
+                        page = doc.load_page(page_num)
+                        # Extract text from the page
+                        text = page.get_text()
+                        # Append the text of the current page to the complete text
+                        complete_text += text
         
-        logger.info(f"Split Text")
+        
+        logger.info(f"Split Text with length: {len(complete_text)}")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size = 250, chunk_overlap=0)
-        docs = text_splitter.create_documents([text])        
+        docs = text_splitter.create_documents([complete_text])        
+        
+        ################################################################################################
+        ######################################### Debug function ########################################
+        ################################################################################################
+        if 1 == 1: 
+            with open('rag_text.txt', 'w', newline='') as file:
+                number = 0
+                for document in docs:
+                    number = number +1
+                    file.write(f"{number}: {document}\n")
+            
+            file.close()        
+        ################################################################################################
         
         return docs
     

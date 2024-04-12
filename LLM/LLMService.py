@@ -45,8 +45,6 @@ class LLMService:
         time_2 = time()
         logger.info(f"Inference time: {round(time_2-time_1, 3)} sec.")
         logger.info("\nResult: ", result)
-        #result = json.loads(result)
-        print(type(result))
         result = json.dumps(result)
         self.databaseWriter.insert_chat(prompt_user=prompt, agent_id=agent_id, answer_assistant=result)
         return result
