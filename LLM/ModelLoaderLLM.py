@@ -40,7 +40,7 @@ class LlamaForCausalRAG:
                 model_path=path, #it is important to quantisize the model in order to use it with llamaCpp check: https://colab.research.google.com/drive/1jeb9RoOVW984EpUAA_XNu1KfoyJOCe2Q#scrollTo=xBuDTDcIvIOQ
                 f16_kv=True,  # MUST set to True, otherwise you will run into problem after a couple of calls
                 callback_manager=self.callback_manager,
-                max_tokens=2048,
+                max_tokens=4096,
                 verbose=True,  # Verbose is required to pass to the callback manager
             )
         else:

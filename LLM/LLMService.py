@@ -1,6 +1,5 @@
 from langchain.chains import RetrievalQA
 import json
-import ast
 from LLM.ModelLoaderLLM import LlamaForCausalRAG
 from LLM.EmbeddingHandler import EmbeddingHnadler
 

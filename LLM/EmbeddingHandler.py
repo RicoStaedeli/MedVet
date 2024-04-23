@@ -28,7 +28,8 @@ class EmbeddingHnadler:
         
     
     def buildChunks(self):
-        pdf_directory = "../assets/Documents"
+        pdf_directory = "../assets/Documents/Dental PDF"
+        json_directory = "../assets/Documents/Cases txt"
         
         logger.info(f"Generate RAG with Documents")
         # Initialize an empty string to hold the text
@@ -49,6 +50,16 @@ class EmbeddingHnadler:
                         # Append the text of the current page to the complete text
                         complete_text += text
         
+        #iterate all documents in Directory
+        for filename in os.listdir(json_directory):
+            f = os.path.join(json_directory, filename)
+            print(f)
+            # checking if it is a file
+            if os.path.isfile(f):
+                with open(f, 'r') as file:
+                    data = file.read()
+                    
+        complete_text = text + data
         
         logger.info(f"Split Text with length: {len(complete_text)}")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size = 250, chunk_overlap=0)
@@ -57,7 +68,7 @@ class EmbeddingHnadler:
         ################################################################################################
         ######################################### Debug function ########################################
         ################################################################################################
-        if 1 == 1: 
+        if 1 == 0: 
             with open('rag_text.txt', 'w', newline='') as file:
                 number = 0
                 for document in docs:
