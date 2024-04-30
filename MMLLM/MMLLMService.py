@@ -17,7 +17,7 @@ logger = get_logger(__name__, config)
 from time import time
 
 
-class LLMService:
+class MMLLMService:
     
     def __init__(self,config: dict) -> None:
         llamaModel = LlamaForCausalRAG(config,logger)
@@ -26,11 +26,7 @@ class LLMService:
         model_path = config.get("model", {}).get("path")
         llm = llamaModel.load_llm(model_path)
         
-        # embeddingHandler = EmbeddingHnadler()
-        # chunks = embeddingHandler.buildChunks()
-        # vectordb = embeddingHandler.embedDocumentsAndSaveInVectoreStore(chunks)
-        
-        # retriever = vectordb.as_retriever()
+
         ragCreator = RAGCreator()
         retriever = ragCreator.getRetriever()
 
@@ -52,8 +48,14 @@ class LLMService:
         formatted = prompt_template.format(system_prompt=system_prompt, user_message=user_message)
         return formatted
         
-                
-    def generate(self, prompt: str, agent_id: int):
+    
+    def generateMMresponse(self,prompt:str, image: str, agent_id:int):
+        result = ""
+        
+        return result
+
+    
+    def generateLLMresponse(self, prompt: str, agent_id: str):
         logger.info(f"Query: {prompt}\n")
         time_1 = time()
         prompt = self.formatPrompt(prompt)

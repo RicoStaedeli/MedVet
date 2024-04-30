@@ -20,13 +20,17 @@ from langchain_community.document_loaders import (
     UnstructuredWordDocumentLoader,
 )
 
+#########################################################################################
+### This code is inspired by https://github.com/13331112522/m-rag/blob/main/m-rag.py ####
+#########################################################################################
+
 class ImgLoader:
         def __init__(self, source_directory, file_path):
             self.file_path = file_path       
             self.source_directory = source_directory
         
         def img_parse(self, img_path):
-            res = "Fake it till you make it!"
+            res = "Fake it till you make it!" #ToDo: implementation of LlaVa response to the image
 
             with open(self.source_directory+"/"+os.path.basename(img_path)+".txt", "a") as write_file:
                 write_file.write("---"*10 + "\n\n")
