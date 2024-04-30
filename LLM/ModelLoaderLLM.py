@@ -2,18 +2,13 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.llms import LlamaCpp
 
-#Utils
-from Utils.logger import get_logger
-from Utils.config import load_config
-config = load_config("config/cfg.yaml")
-logger = get_logger(__name__, config)
 
 class LlamaForCausalRAG:
     
-    def __init__(self):
+    def __init__(self,config,logger):
         # Callbacks support token-wise streaming
         self.callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
-        
+        self.logger = logger
         use_GPU = config.get("acceleration", {}).get("useGPU")
         if(use_GPU):
             self.device = config.get("acceleration", {}).get("GPU")
@@ -35,7 +30,7 @@ class LlamaForCausalRAG:
     def load_llm(self,path):
         
         if self.device == "cpu":
-            logger.info(f"Initialize LLM CPU configuration")
+            self.logger.info(f"Initialize LLM CPU configuration")
             return LlamaCpp(
                 model_path=path, #it is important to quantisize the model in order to use it with llamaCpp check: https://colab.research.google.com/drive/1jeb9RoOVW984EpUAA_XNu1KfoyJOCe2Q#scrollTo=xBuDTDcIvIOQ
                 f16_kv=True,  # MUST set to True, otherwise you will run into problem after a couple of calls
@@ -44,7 +39,7 @@ class LlamaForCausalRAG:
                 verbose=True,  # Verbose is required to pass to the callback manager
             )
         else:
-            logger.info(f"Initialize LLM with GPU configuration")
+            self.logger.info(f"Initialize LLM with GPU configuration")
             return LlamaCpp(
                 model_path = path, #it is important to quantisize the model in order to use it with llamaCpp check: https://colab.research.google.com/drive/1jeb9RoOVW984EpUAA_XNu1KfoyJOCe2Q#scrollTo=xBuDTDcIvIOQ
                 n_gpu_layers = self.n_gpu_layers,

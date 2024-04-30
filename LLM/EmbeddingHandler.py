@@ -1,11 +1,9 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.chains import RetrievalQA
 
 import fitz
 import os
-from time import time
 
 #Utils
 from Utils.logger import get_logger

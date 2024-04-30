@@ -58,9 +58,9 @@ def generate_text(txtGen: TextGeneration):
         prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
         logger.info(f"replace disturbing characters and generate prompt: {prompt}")
         agent_id = txtGen.agent_id
-        result = LlmService.generate(prompt,agent_id)
+        result,documents = LlmService.generate(prompt,agent_id)
        
-        return {"id":1,"prompt": prompt,"result":result}
+        return {"id":1,"prompt": prompt,"result":result,"documents":documents}
     
     except Exception as e:
         logger.error(f"Error during text generation: {e}")
