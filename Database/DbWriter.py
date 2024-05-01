@@ -12,19 +12,19 @@ class DbWriter:
         cur = conn.cursor()
         #cur.execute('DROP TABLE IF EXISTS chatHistory')
         self.logger.debug(f"Create Table if not exists")
-        cur.execute('CREATE TABLE IF NOT EXISTS chatHistory (id_chat INTEGER PRIMARY KEY,creationDate timestamp, agent_id VARCHAR, prompt_user TEXT NOT NULL, answer_assistant TEXT NOT NULL)')
+        cur.execute('CREATE TABLE IF NOT EXISTS chatHistory (id_chat INTEGER PRIMARY KEY,creationDate timestamp, agent_id VARCHAR, prompt_user TEXT NOT NULL, answer_assistant TEXT NOT NULL, image TEXT, image_description TEXT )')
         #cur.execute('DELETE * FROM chatHistory')
         conn.commit()
         self.logger.debug(f"Close connection to Database")
         conn.close()
 
-    def insert_chat(self,prompt_user,agent_id,answer_assistant ):
+    def insert_chat(self,prompt_user,agent_id,answer_assistant,image,image_description ):
         try:
             connection = sqlite3.connect('Database/medvet_chat_db.sqlite')
             cur = connection.cursor()
-            sqlite_insert_query = '''INSERT INTO chatHistory (creationDate, agent_id, prompt_user, answer_assistant) VALUES (?, ?, ?, ?)'''
+            sqlite_insert_query = '''INSERT INTO chatHistory (creationDate, agent_id, prompt_user, answer_assistant, image, image_description) VALUES (?, ?, ?, ?, ?, ?)'''
             creationDate = datetime.datetime.now()
-            cur.execute(sqlite_insert_query,(creationDate, agent_id, prompt_user, answer_assistant))
+            cur.execute(sqlite_insert_query,(creationDate, agent_id, prompt_user, answer_assistant,image, image_description))
             #id_chat = cur.lastrowid
             connection.commit()
             connection.close()

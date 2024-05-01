@@ -117,6 +117,7 @@ class RagDocumentLoader():
         #             results.extend(docs)
         #             pbar.update()
 
+
         return results
 
     def process_documents(self, ignored_files: List[str] = []) -> List[Document]:
@@ -132,6 +133,19 @@ class RagDocumentLoader():
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
         texts = text_splitter.split_documents(documents)
         print(f"Split into {len(texts)} chunks of text (max. {self.chunk_size} tokens each)")
+        
+        ################################################################################################
+        ######################################### Debug function ########################################
+        ################################################################################################
+        if 1 == 1: 
+            with open('rag_text.txt', 'w', newline='') as file:
+                number = 0
+                for document in texts:
+                    number = number +1
+                    file.write(f"{number}: {document}\n")
+            
+            file.close()        
+        ################################################################################################
         return texts
     
    

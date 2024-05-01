@@ -43,37 +43,37 @@ except Exception as e:
 
 #loading the vectorstore
 #db = FAISS.load_local("faiss_index", embeddings,allow_dangerous_deserialization=True)
-retriever = vectordb.as_retriever(search_kwargs={"k": TARGET_SOURCE_CHUNKS})
+# retriever = vectordb.as_retriever(search_kwargs={"k": TARGET_SOURCE_CHUNKS})
 
-# Callbacks support token-wise streaming
-callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
+# # Callbacks support token-wise streaming
+# callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
-llamaModel = LlamaForCausalRAG(config,logger)
+# llamaModel = LlamaForCausalRAG(config,logger)
 
-model_path = config.get("model", {}).get("path")
-llm = llamaModel.load_llm(model_path)
+# model_path = config.get("model", {}).get("path")
+# llm = llamaModel.load_llm(model_path)
 
     
-qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
+# qa = RetrievalQA.from_chain_type(llm=llm, chain_type="stuff", retriever=retriever, return_source_documents=True)
 # Interactive questions and answers
-while True:
-    query = input("\nEnter a query: ")
-    if query == "exit":
-        break
-    if query.strip() == "":
-        continue
+# while True:
+#     query = input("\nEnter a query: ")
+#     if query == "exit":
+#         break
+#     if query.strip() == "":
+#         continue
     
-    # Get the answer from the chain
-    start = time.time()
-    res = qa.invoke(query)
-    answer, docs = res['result'], [] if False else res['source_documents']
-    end = time.time()
-    # Print the result
-    print("\n\n> Question:")
-    print(query)
-    print(f"\n> Answer (took {round(end - start, 2)} s.):")
-    print(answer)
-    # Print the relevant sources used for the answer
-    for document in docs:
-        print("\n> " + document.metadata["source"] + ":")
-        print(document.page_content)
+#     # Get the answer from the chain
+#     start = time.time()
+#     res = qa.invoke(query)
+#     answer, docs = res['result'], [] if False else res['source_documents']
+#     end = time.time()
+#     # Print the result
+#     print("\n\n> Question:")
+#     print(query)
+#     print(f"\n> Answer (took {round(end - start, 2)} s.):")
+#     print(answer)
+#     # Print the relevant sources used for the answer
+#     for document in docs:
+#         print("\n> " + document.metadata["source"] + ":")
+#         print(document.page_content)

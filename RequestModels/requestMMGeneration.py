@@ -6,3 +6,5 @@ class MMGeneration(BaseModel):
     agent_id: str
     ip_address:str
     img:str
+    
+    

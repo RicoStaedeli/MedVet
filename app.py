@@ -54,8 +54,10 @@ async def read_root():
 @app.put("/generateMM",tags=["Text Generation"])
 def generate_text(txtGen: MMGeneration):
     logger.info(f"Received request: {txtGen}")
+    print("0")
     try:
         #Set the prmompt
+        print("1")
         prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
         logger.info(f"replace disturbing characters and generate prompt: {prompt}")
         agent_id = txtGen.agent_id
@@ -64,12 +66,13 @@ def generate_text(txtGen: MMGeneration):
         image_description = ""
         
         if image != "":
-            image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt="Describe very detailed what is in the image", image=image )
+            logger.info(f"Start generating image description with LlaVa Med")
+            image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt=prompt, image=image )
         
-        
-        result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc=image_description, prompt=prompt)
+        logger.info(f"Start generating answer with Llama. image_desc: {image_description} image: {image == ""}")        
+        result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc=image_description, prompt=prompt, image=image)
        
-        return {"id":1,"prompt": prompt,"result":result,"documents":documents}
+        return {"prompt": prompt,"result":result,"documents":documents}
     
     except Exception as e:
         logger.error(f"Error during text generation: {e}")
