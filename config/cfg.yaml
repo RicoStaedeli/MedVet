@@ -2,8 +2,8 @@ logging:
   level: DEBUG
   
 model:
-  name: LLaMA-7b-chat
-  path: ../model/Llama-2-7b-chat.gguf
+  name: Meta-Llama-3-8B
+  path: ../model/Meta-Llama-3-8B
 
 acceleration:
   useGPU: True

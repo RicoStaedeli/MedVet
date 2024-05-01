@@ -26,11 +26,7 @@ class LLMService:
         model_path = config.get("model", {}).get("path")
         llm = llamaModel.load_llm(model_path)
         
-        # embeddingHandler = EmbeddingHnadler()
-        # chunks = embeddingHandler.buildChunks()
-        # vectordb = embeddingHandler.embedDocumentsAndSaveInVectoreStore(chunks)
-        
-        # retriever = vectordb.as_retriever()
+
         ragCreator = RAGCreator()
         retriever = ragCreator.getRetriever()
 

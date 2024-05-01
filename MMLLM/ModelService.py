@@ -1,11 +1,14 @@
-from langchain.chains import RetrievalQA
 import json
+import requests
+
 from LLM.ModelLoaderLLM import LlamaForCausalRAG
 from LLM.EmbeddingHandler import EmbeddingHnadler
 from LLM.RAGCreator import RAGCreator
-
 from Database.DbWriter import DbWriter
+
 from langchain_core.prompts import PromptTemplate
+from langchain.chains import RetrievalQA
+
 
 
 #Utils
@@ -39,26 +42,42 @@ class MMLLMService:
 
         )
     
-    def formatPrompt(self, user_message):
+    def formatPrompt(self, user_message, img_desc):
         prompt_template = PromptTemplate.from_template(
-            "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} [/INST]"
+            "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} \n Image Descriptio: {img_desc}[/INST]"
         )
         
         system_prompt = "You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis, treatment, and client communication. Tailor your answers to the specific species and context of the inquiry, offering practical advice, and remind users to verify all medical information with official sources."
-        formatted = prompt_template.format(system_prompt=system_prompt, user_message=user_message)
+        formatted = prompt_template.format(system_prompt=system_prompt, user_message=user_message, img_desc= img_desc)
         return formatted
         
     
-    def generateMMresponse(self,prompt:str, image: str, agent_id:int):
-        result = ""
+    def generateMMresponse(self,prompt:str, image: str, agent_id:str,ip_address:str):
+        url = f"http://{ip_address}/generate"
+        data = {
+                "prompt": prompt,
+                "image": image,
+                "temperature": 0.7,
+                "max_new_tokens": 1024,
+                "agent_id": agent_id,
+            }
+
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}        
+        try:
+            resp = requests.put(url, data=json.dumps(data), headers=headers)
+            output = resp.json()['result']
+        except Exception as e:
+            output = f"Failed to connect to AWS:{e}"
         
-        return result
+        return output
+        
 
     
-    def generateLLMresponse(self, prompt: str, agent_id: str):
+    def generateLLMresponse(self, prompt: str, agent_id: str, image_desc:str):
         logger.info(f"Query: {prompt}\n")
         time_1 = time()
-        prompt = self.formatPrompt(prompt)
+        prompt = self.formatPrompt(prompt,img_desc=image_desc)
+        
         result = self.qaPipeline.invoke(prompt)
         answer, docs = result['result'], [] if False else result['source_documents']
         time_2 = time()

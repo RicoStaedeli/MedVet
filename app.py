@@ -11,11 +11,11 @@ logger = get_logger(__name__, config)
 print(config)
 
 #Requests
-from RequestModels.requestTextGeneration import TextGeneration
+from RequestModels.requestMMGeneration import MMGeneration
 
 #Serices
-from LLM.LLMService import LLMService
-LlmService = LLMService(config)
+from MMLLM.ModelService import MMLLMService
+mmService = MMLLMService(config)
 
 tags_metadata = [
     {
@@ -50,15 +50,24 @@ async def read_root():
     logger.info(f"Redirect to /docs")
     return RedirectResponse(url='/docs')
 
-@app.put("/generate",tags=["Text Generation"])
-def generate_text(txtGen: TextGeneration):
+   
+@app.put("/generateMM",tags=["Text Generation"])
+def generate_text(txtGen: MMGeneration):
     logger.info(f"Received request: {txtGen}")
     try:
         #Set the prmompt
         prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
         logger.info(f"replace disturbing characters and generate prompt: {prompt}")
         agent_id = txtGen.agent_id
-        result,documents = LlmService.generate(prompt,agent_id)
+        ip_address = txtGen.ip_address
+        image = txtGen.img
+        image_description = ""
+        
+        if image != "":
+            image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt="Describe very detailed what is in the image", image=image )
+        
+        
+        result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc=image_description, prompt=prompt)
        
         return {"id":1,"prompt": prompt,"result":result,"documents":documents}
     
