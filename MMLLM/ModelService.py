@@ -34,6 +34,7 @@ class MMLLMService:
         ragCreator = RAGCreator()
         retriever = ragCreator.getRetriever()
         self.conversation = default_conversation.copy()
+        self.assistant_mode = MODE_ASSISTANT.CASE
 
         self.qaPipeline = RetrievalQA.from_chain_type(
             llm=llm,
@@ -48,11 +49,23 @@ class MMLLMService:
         self.conversation = default_conversation.copy() 
        
     def set_assistantMode(self, assistant_mode):
-        if assistant_mode == MODE_ASSISTANT.KB:
-            self.conversation = conv_templates['simple_kb'].copy()
-        else:
-            self.conversation = default_conversation.copy() 
+        print(assistant_mode)
+        if self.assistant_mode != assistant_mode:
+            logger.info(f"Assistant Mode changed to {assistant_mode}")
+            if assistant_mode == MODE_ASSISTANT.KB:
+                template_name = "simple_kb"
+                self.assistant_mode = MODE_ASSISTANT.KB
+               
+            else:
+                template_name = "simple_case"
+                self.assistant_mode = MODE_ASSISTANT.CASE
+
+            tempConversation = conv_templates[template_name].copy()
+            tempConversation.messages = self.conversation.messages #copy chat history
+            tempConversation.messages[0] = conv_templates[template_name].messages[0] #use first two messages from conversation template
+            tempConversation.messages[1] = conv_templates[template_name].messages[1]
             
+            self.conversation = tempConversation
             
     
     
@@ -120,15 +133,15 @@ class MMLLMService:
             answer, docs = result['result'], [] if False else result['source_documents']
             time_2 = time()
             logger.info(f"Inference time: {round(time_2-time_1, 3)} sec.")
-            logger.info("\nResult: ", result)
             result = answer #json.dumps(answer)
-            logger.info(f"found {len(docs)} Documents")
             for document in docs:
-                print(document)
+                pagenum = ""
+                if "page" in document.metadata:  
+                    pagenum = document.metadata["page"] 
                 doc = {
                     "source":document.metadata["source"],
                     "content":document.page_content,
-                    "page":document.metadata["page"]
+                    "page": pagenum
                 }
                 documents.append(doc)
             
