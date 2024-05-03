@@ -77,10 +77,10 @@ def generate_answer(txtGen: MMGeneration):
             use_rag = MODE_RAG.NORAG
         
         mode_assistant = txtGen.mode_assistant
+        mmService.set_assistantMode(mode_assistant)
         
         response = mmService.generateAnswer(agent_id=agent_id, display_combined=display_combined, image=image, ip_address_llava=ip_address_llava,max_new_tokens=max_new_tokens, temperature=temperature,mode_assistant=mode_assistant, prompt_user=prompt,use_rag=use_rag )
 
-        print(f"Response: {response}")
         return response
     
     except Exception as e:

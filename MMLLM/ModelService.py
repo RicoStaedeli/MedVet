@@ -2,7 +2,6 @@ import json
 import requests
 
 from LLM.ModelLoaderLLM import LlamaForCausalRAG
-from LLM.EmbeddingHandler import EmbeddingHnadler
 from LLM.RAGCreator import RAGCreator
 from Database.DbWriter import DbWriter
 
@@ -48,10 +47,16 @@ class MMLLMService:
     def clear_history(self):
         self.conversation = default_conversation.copy() 
        
+    def set_assistantMode(self, assistant_mode):
+        if assistant_mode == MODE_ASSISTANT.KB:
+            self.conversation = conv_templates['simple_kb'].copy()
+        else:
+            self.conversation = default_conversation.copy() 
+            
+            
     
-    def formatPromptLlaMACombined(self, user_message, img_desc):
-       
-        
+    
+    def formatPromptLlaMACombined(self, user_message, img_desc):       
         prompt_template = PromptTemplate.from_template(
             "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} \n Image Description: {img_desc}[/INST]"
         )
@@ -66,7 +71,6 @@ class MMLLMService:
         
         print(f"Conversation: {self.conversation.get_prompt()}")
 
-        
         formatted = self.conversation.get_prompt()
         return formatted
     
@@ -118,13 +122,15 @@ class MMLLMService:
             logger.info(f"Inference time: {round(time_2-time_1, 3)} sec.")
             logger.info("\nResult: ", result)
             result = answer #json.dumps(answer)
-            
+            logger.info(f"found {len(docs)} Documents")
             for document in docs:
+                print(document)
                 doc = {
                     "source":document.metadata["source"],
-                    "content":document.page_content
+                    "content":document.page_content,
+                    "page":document.metadata["page"]
                 }
-            documents.append(doc)
+                documents.append(doc)
             
             output = {
                 "result": result,

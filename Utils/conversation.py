@@ -47,35 +47,36 @@ class Conversation:
         }
 
 
-simple_conv_Knowledgebase = Conversation(
-    system="A chat between a curious human and an artificial intelligence assistant. "
-           "The assistant gives helpful, detailed, and polite answers to the human's questions.",
+simple_conv_Llama_Knowledgebase = Conversation(
+    system="You are an intelligent assistant designed to be a knowledge base for veterinarians. You provide detailed and specific responses related to veterinary medicine."
+           "Use your complete knowledge to explain the aked questions very specific.",
     roles=("Human", "Assistant"),
     messages=(
         ("Human", "Hi!"),
-        ("Assistant", "Hi there!  How can I help you?\n")
+        ("Assistant", "Hi there!  I am a knowledge base for veterinarians. How can I help you?")
     ),
     offset=2,
 )
 
 simple_conv_Llama_casesolver = Conversation(
     system="You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment."
-           "Tailor your answers to the specific species and context of the inquiry, offering practical advice, and remind users to verify all medical information with official sources."
+           "You analyse the provided case and tailor your answers to the specific species and context of the inquiry."
            "Follow the instructions carefully and explain your answers in detail.",
     roles=("Human", "Assistant"),
     messages=(
         ("Human", "Hi!"),
-        ("Assistant", "Hi there!  How can I help you?\n")
+        ("Assistant", "Hi there!  How can I help you?")
     ),
     offset=2,
 )
 
 
 default_conversation = simple_conv_Llama_casesolver
+
 conv_templates = {
     "default": simple_conv_Llama_casesolver,
-    "simple": simple_conv_Knowledgebase,
-    "simple_Llama": simple_conv_Llama_casesolver
+    "simple_kb": simple_conv_Llama_Knowledgebase,
+    "simple_case": simple_conv_Llama_casesolver
 }
 
 
