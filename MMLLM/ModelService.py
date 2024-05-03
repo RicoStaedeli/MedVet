@@ -12,6 +12,7 @@ from langchain.chains import RetrievalQA
 
 
 #Utils
+from Utils.constants import MODE_ASSISTANT, MODE_DISPLAY, MODE_RAG
 from Utils.logger import get_logger
 from Utils.config import load_config
 config = load_config("config/cfg.yaml")
@@ -42,7 +43,7 @@ class MMLLMService:
 
         )
     
-    def formatPrompt(self, user_message, img_desc):
+    def formatPromptLlaMACombined(self, user_message, img_desc):
         prompt_template = PromptTemplate.from_template(
             "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} \n Image Description: {img_desc}[/INST]"
         )
@@ -51,6 +52,17 @@ class MMLLMService:
         formatted = prompt_template.format(system_prompt=system_prompt, user_message=user_message, img_desc= img_desc)
         return formatted
     
+    
+    def formatPromptLlaMA(self, user_message):
+        prompt_template = PromptTemplate.from_template(
+            "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message}[/INST]"
+        )
+        
+        system_prompt = "You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment. Tailor your answers to the specific species and context of the inquiry, offering practical advice, and remind users to verify all medical information with official sources."
+        formatted = prompt_template.format(system_prompt=system_prompt, user_message=user_message)
+        return formatted
+    
+    
     def formatPromptLlaVA(self, prompt):
         prompt_template = PromptTemplate.from_template(
             "Case Description: {prompt} \n\n Describe what you see in the image and what you interpret with this description"
@@ -58,57 +70,158 @@ class MMLLMService:
         
         formatted = prompt_template.format(prompt=prompt)
         return formatted
+        
     
-    
-    def generateMMresponse(self,prompt:str, image: str, agent_id:str,ip_address:str):
-        url = f"http://{ip_address}/generate"
+    def generateLLaVAresponse(self, ip_address_llava, prompt_llava, temperature, max_new_tokens, image):
+        url = f"http://{ip_address_llava}/generate"
         data = {
-                "prompt": self.formatPromptLlaVA(prompt),
+                "prompt": prompt_llava,
                 "image": image,
-                "temperature": 0.7,
-                "max_new_tokens": 1024,
-                "agent_id": agent_id,
+                "temperature": temperature,
+                "max_new_tokens": max_new_tokens,
+                "agent_id":""
             }
 
-        print(f"Prompt:{self.formatPromptLlaVA(prompt)}")
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}        
         try:
             resp = requests.put(url, data=json.dumps(data), headers=headers)
-            output = resp.json()['result']
+            output = {
+                "result":resp.json()['result'],
+                "prompt":prompt_llava,
+                "status":"OK"
+            }
         except Exception as e:
             logger.info(f"Failed to connect to AWS:{e}")
-            output = ""
+            output = {
+                "result":"",
+                "status":f"Failed to connect to AWS:{e}"
+            }
         
-        print(f"Multimodal Answer of LlaVa Med: {output}")
         return output
-        
-
     
-    def generateLLMresponse(self, prompt: str, agent_id: str, image_desc:str, image:str):
+    def generateLLaMAresponse(self, prompt_llama, use_rag ):
         documents = []
         result = ""
-        
-        if image != "" and image_desc == "":
-            logger.info(f"Failed to connect to AWS")
-            result = f"Failed to connect to AWS"
-        else:            
-            prompt = self.formatPrompt(prompt,img_desc=image_desc)
-            logger.info(f"Query: {prompt}\n")
+        try:
             time_1 = time()
-            
-            result = self.qaPipeline.invoke(prompt)
+            result = self.qaPipeline.invoke(prompt_llama)
             answer, docs = result['result'], [] if False else result['source_documents']
             time_2 = time()
             logger.info(f"Inference time: {round(time_2-time_1, 3)} sec.")
             logger.info("\nResult: ", result)
-            result = json.dumps(answer)
+            result = answer #json.dumps(answer)
             
             for document in docs:
                 doc = {
                     "source":document.metadata["source"],
                     "content":document.page_content
                 }
-                documents.append(doc)
-            self.databaseWriter.insert_chat(prompt_user=prompt, agent_id=agent_id, answer_assistant=result,image_description=image_desc, image=image)
+            documents.append(doc)
+            
+            output = {
+                "result": result,
+                "prompt": prompt_llama,
+                "documents": documents,
+                "status":"OK"
+            }
+        except Exception as e:
+            logger.info(f"Failed to generate answer with LlaMA")
+            print(f"Failed LlaMA {e}")
+            output = {
+                "result":result,
+                "documents":documents,
+                "prompt":"",
+                "status":f"Failed"
+            }
         
-        return result,documents
+        return output
+    
+    def generateDocumentsmarkdown(self, documents):
+        response = ""
+        for document in documents:
+            response = response + f"- {document['source']}  \n  \n"
+
+        return response
+    
+    def generateAnswer(self, 
+                       agent_id, 
+                       prompt_user, 
+                       display_combined:str, 
+                       mode_assistant:str, 
+                       use_rag:str, 
+                       image:str, 
+                       ip_address_llava:str, 
+                       max_new_tokens, 
+                       temperature):
+        
+        #No image --> use just LlaMA pipeline
+        if prompt_user != "" and image == "":
+            print(f"Generate answer only with LlaMA")
+            try:
+                prompt_llama = self.formatPromptLlaMA(prompt_user)
+                response_llama = self.generateLLaMAresponse(prompt_llama=prompt_llama,use_rag=use_rag)
+                self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava="", prompt_llama=prompt_llama, answer_llava="", answer_llama=response_llama["result"], answer_combined = "", image = "", mode_display="", mode_assistant=mode_assistant, mode_rag=use_rag)
+
+                status = "OK"
+                
+                #format in streamlit markdown
+                response = f"**Result LlaMA and RAG**\n\n{response_llama['result']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['documents'])}"
+
+            except Exception as e:
+                logger.info(f"Failed to generate Answer {e}")
+                response = "Failed to generate Answer"
+                response_llama = ""
+                status = "Failed"
+                 
+            return {"status":status, "response":response, "answer_llama": response_llama}
+            
+            
+        #because image isn't empty --> enter multimodal inference
+        elif prompt_user != "" and image != "" and display_combined == MODE_DISPLAY.SEPARATE:
+            print(f"Start generating Answer with LLaMA and LLaVa, display separate and with RAG")
+            try:
+                prompt_llama = self.formatPromptLlaMA(prompt_user)
+                response_llama = self.generateLLaMAresponse(prompt_llama=prompt_llama,use_rag=use_rag)
+                
+                prompt_llava = self.formatPromptLlaVA(prompt_user)
+                response_llava = self.generateLLaVAresponse(image=image, ip_address_llava=ip_address_llava , max_new_tokens=max_new_tokens, prompt_llava=prompt_llava, temperature=temperature)
+                
+                self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["result"], answer_combined = "", image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)
+                
+                response = f"**Result LlaMA and RAG**\n\n{response_llama['result']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['documents'])}\n\n**Result LlaVA- Med**\n\n{response_llava["result"]}"
+                status = "OK"
+            except: 
+                response = "Failed to generate Answer"
+                response_llama = ""
+                response_llava = ""
+                status = "Failed"
+            
+            return {"status":status, "response":response, "answer_llama": response_llama, "answer_llava": response_llava}
+        
+        elif prompt_user != "" and image != "" and display_combined == MODE_DISPLAY.COMBINED:
+            print(f"Generate combined answer")
+            try:
+                
+                prompt_llava = self.formatPromptLlaVA(prompt_user)
+                response_llava = self.generateLLaVAresponse(image=image, ip_address_llava=ip_address_llava , max_new_tokens=max_new_tokens, prompt_llava=prompt_llava, temperature=temperature)
+                
+                prompt_llama = self.formatPromptLlaMACombined(prompt_user,img_desc=prompt_llava)
+                response_llama = self.generateLLaMAresponse(prompt_llama=prompt_llama,use_rag=use_rag)
+                
+                
+                self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["result"], answer_combined = response_llama["result"], image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)
+                
+                response = f"**Result combination of LlaVA- MEd and LlaMA with RAG**\n\n{response_llama['result']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['documents'])}"
+                status = "OK"
+            
+            except: 
+                response = "Failed to generate Answer"
+                response_llama = ""
+                response_llava = ""
+                status = "Failed"
+            
+            return {"status":status, "response":response, "answer_llama": response_llama, "answer_llava": response_llava}
+        
+        
+        else:
+            print(f"No valid configuration")        

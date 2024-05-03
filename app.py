@@ -3,6 +3,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 #Utils
+from Utils.constants import MODE_ASSISTANT, MODE_DISPLAY, MODE_RAG
+
 from Utils.logger import get_logger
 from Utils.config import load_config
 config = load_config("config/cfg.yaml")
@@ -54,29 +56,81 @@ async def read_root():
 @app.put("/generateMM",tags=["Text Generation"])
 def generate_text(txtGen: MMGeneration):
     logger.info(f"Received request: {txtGen}")
-    print("0")
     try:
         #Set the prmompt
-        print("1")
         prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
         logger.info(f"replace disturbing characters and generate prompt: {prompt}")
         agent_id = txtGen.agent_id
         ip_address = txtGen.ip_address
-        image = txtGen.img
-        image_description = ""
+        image = txtGen.im
         
-        if image != "":
-            logger.info(f"Start generating image description with LlaVa Med")
-            image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt=prompt, image=image )
         
-        logger.info(f"Start generating answer with Llama. image_desc: {image_description} image: {image == ""}")        
-        result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc=image_description, prompt=prompt, image=image)
-       
-        return {"prompt": prompt,"result":result,"documents":documents}
+        if txtGen.combined:
+            logger.info(f"Combined Mode activated")       
+        
+            image_description = ""
+            
+            if image != "":
+                logger.info(f"Start generating image description with LlaVa Med")
+                image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt=prompt, image=image )
+            
+            logger.info(f"Start generating answer with Llama. image_desc: {image_description} image: {image == ""}")        
+            result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc=image_description, prompt=prompt, image=image)
+        
+            return {"prompt": prompt,"result":result,"documents":documents}
+        
+        else:
+            logger.info(f"Separate Mode activated")
+            image_description = ""
+            
+            if image != "":
+                logger.info(f"Start generating image description with LlaVa Med")
+                image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt=prompt, image=image )
+            
+            logger.info(f"Start generating answer with Llama.")        
+            result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc="", prompt=prompt, image=image)
+        
+            return {"prompt": prompt,"result":result,"documents":documents}
+            
     
     except Exception as e:
         logger.error(f"Error during text generation: {e}")
         raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+
+@app.put("/generate",tags=["Text Generation"])
+def generate_answer(txtGen: MMGeneration):
+    logger.info(f"Received request: {txtGen}")
+    try:
+        #Set the prmompt
+        prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
+        logger.info(f"replace disturbing characters and generate prompt: {prompt}")
+        agent_id = txtGen.agent_id
+        ip_address_llava = txtGen.ip_address_llava
+        image = txtGen.img
+        max_new_tokens = txtGen.max_new_tokens
+        temperature = txtGen.temperature
+        
+        if txtGen.display_combined:
+            display_combined = MODE_DISPLAY.COMBINED
+        else:
+            display_combined = MODE_DISPLAY.SEPARATE
+        
+        if txtGen.use_rag:
+            use_rag = MODE_RAG.RAG
+        else:
+            use_rag = MODE_RAG.NORAG
+        
+        mode_assistant = txtGen.mode_assistant
+        
+        response = mmService.generateAnswer(agent_id=agent_id, display_combined=display_combined, image=image, ip_address_llava=ip_address_llava,max_new_tokens=max_new_tokens, temperature=temperature,mode_assistant=mode_assistant, prompt_user=prompt,use_rag=use_rag )
+
+        print(f"Response: {response}")
+        return response
+    
+    except Exception as e:
+        logger.error(f"Error during text generation: {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
 
 ##############################
 #### HTTP Exception
