@@ -108,16 +108,6 @@ class RagDocumentLoader():
             docs = self.load_single_document(file)
             results.extend(docs)
         
-        # with Pool(processes=os.cpu_count()) as pool:
-        #     results = []
-        #     with tqdm(total=len(filtered_files), desc='Loading new documents', ncols=80) as pbar:
-                
-        #         for j, docs in enumerate(pool.imap_unordered(self.load_single_document, filtered_files)):
-        #             print(docs)
-        #             results.extend(docs)
-        #             pbar.update()
-
-
         return results
 
     def process_documents(self, ignored_files: List[str] = []) -> List[Document]:

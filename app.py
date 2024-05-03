@@ -53,50 +53,6 @@ async def read_root():
     return RedirectResponse(url='/docs')
 
    
-@app.put("/generateMM",tags=["Text Generation"])
-def generate_text(txtGen: MMGeneration):
-    logger.info(f"Received request: {txtGen}")
-    try:
-        #Set the prmompt
-        prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
-        logger.info(f"replace disturbing characters and generate prompt: {prompt}")
-        agent_id = txtGen.agent_id
-        ip_address = txtGen.ip_address
-        image = txtGen.im
-        
-        
-        if txtGen.combined:
-            logger.info(f"Combined Mode activated")       
-        
-            image_description = ""
-            
-            if image != "":
-                logger.info(f"Start generating image description with LlaVa Med")
-                image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt=prompt, image=image )
-            
-            logger.info(f"Start generating answer with Llama. image_desc: {image_description} image: {image == ""}")        
-            result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc=image_description, prompt=prompt, image=image)
-        
-            return {"prompt": prompt,"result":result,"documents":documents}
-        
-        else:
-            logger.info(f"Separate Mode activated")
-            image_description = ""
-            
-            if image != "":
-                logger.info(f"Start generating image description with LlaVa Med")
-                image_description = mmService.generateMMresponse(agent_id=agent_id, ip_address=ip_address,prompt=prompt, image=image )
-            
-            logger.info(f"Start generating answer with Llama.")        
-            result,documents = mmService.generateLLMresponse(agent_id=agent_id, image_desc="", prompt=prompt, image=image)
-        
-            return {"prompt": prompt,"result":result,"documents":documents}
-            
-    
-    except Exception as e:
-        logger.error(f"Error during text generation: {e}")
-        raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
-
 @app.put("/generate",tags=["Text Generation"])
 def generate_answer(txtGen: MMGeneration):
     logger.info(f"Received request: {txtGen}")
@@ -131,7 +87,16 @@ def generate_answer(txtGen: MMGeneration):
         logger.error(f"Error during text generation: {e}")
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
         return {"result":"Failed"}
-
+   
+@app.post("/clearchat",tags=["Text Generation"])
+def clearchat():
+    try:
+        mmService.clear_history()
+    except Exception as e:
+        logger.error(f"Error during text generation: {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
+    
 ##############################
 #### HTTP Exception
 ##############################

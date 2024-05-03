@@ -13,6 +13,7 @@ from langchain.chains import RetrievalQA
 
 #Utils
 from Utils.constants import MODE_ASSISTANT, MODE_DISPLAY, MODE_RAG
+from Utils.conversation import (default_conversation, conv_templates)
 from Utils.logger import get_logger
 from Utils.config import load_config
 config = load_config("config/cfg.yaml")
@@ -33,6 +34,7 @@ class MMLLMService:
 
         ragCreator = RAGCreator()
         retriever = ragCreator.getRetriever()
+        self.conversation = default_conversation.copy()
 
         self.qaPipeline = RetrievalQA.from_chain_type(
             llm=llm,
@@ -42,8 +44,14 @@ class MMLLMService:
             verbose=True
 
         )
+        
+    def clear_history(self):
+        self.conversation = default_conversation.copy() 
+       
     
     def formatPromptLlaMACombined(self, user_message, img_desc):
+       
+        
         prompt_template = PromptTemplate.from_template(
             "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} \n Image Description: {img_desc}[/INST]"
         )
@@ -54,12 +62,12 @@ class MMLLMService:
     
     
     def formatPromptLlaMA(self, user_message):
-        prompt_template = PromptTemplate.from_template(
-            "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message}[/INST]"
-        )
+        self.conversation.append_message(role=self.conversation.roles[0],message=user_message)
         
-        system_prompt = "You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment. Tailor your answers to the specific species and context of the inquiry, offering practical advice, and remind users to verify all medical information with official sources."
-        formatted = prompt_template.format(system_prompt=system_prompt, user_message=user_message)
+        print(f"Conversation: {self.conversation.get_prompt()}")
+
+        
+        formatted = self.conversation.get_prompt()
         return formatted
     
     
@@ -140,8 +148,8 @@ class MMLLMService:
         response = ""
         for document in documents:
             response = response + f"- {document['source']}  \n  \n"
-
         return response
+    
     
     def generateAnswer(self, 
                        agent_id, 
@@ -160,6 +168,7 @@ class MMLLMService:
             try:
                 prompt_llama = self.formatPromptLlaMA(prompt_user)
                 response_llama = self.generateLLaMAresponse(prompt_llama=prompt_llama,use_rag=use_rag)
+                self.conversation.append_message(role=self.conversation.roles[1],message=response_llama['result'])
                 self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava="", prompt_llama=prompt_llama, answer_llava="", answer_llama=response_llama["result"], answer_combined = "", image = "", mode_display="", mode_assistant=mode_assistant, mode_rag=use_rag)
 
                 status = "OK"
@@ -182,6 +191,7 @@ class MMLLMService:
             try:
                 prompt_llama = self.formatPromptLlaMA(prompt_user)
                 response_llama = self.generateLLaMAresponse(prompt_llama=prompt_llama,use_rag=use_rag)
+                self.conversation.append_message(role=self.conversation.roles[1],message=response_llama['result'])
                 
                 prompt_llava = self.formatPromptLlaVA(prompt_user)
                 response_llava = self.generateLLaVAresponse(image=image, ip_address_llava=ip_address_llava , max_new_tokens=max_new_tokens, prompt_llava=prompt_llava, temperature=temperature)
@@ -207,6 +217,7 @@ class MMLLMService:
                 
                 prompt_llama = self.formatPromptLlaMACombined(prompt_user,img_desc=prompt_llava)
                 response_llama = self.generateLLaMAresponse(prompt_llama=prompt_llama,use_rag=use_rag)
+                self.conversation.append_message(role=self.conversation.roles[1],message=response_llama['result'])
                 
                 
                 self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["result"], answer_combined = response_llama["result"], image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)
