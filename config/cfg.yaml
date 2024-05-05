@@ -10,7 +10,7 @@ acceleration:
   GPU: mps 
 
 RAG:
-  source_path: ../assets/Documents/MM_Rag/
+  source_path: ../assets/RAG Documents/
   EMBEDDINGS_MODEL_NAME: all-MiniLM-L6-v2
   TARGET_SOURCE_CHUNKS: 4
   chunk_size: 500
