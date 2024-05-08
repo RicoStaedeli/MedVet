@@ -1,6 +1,9 @@
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.llms import LlamaCpp
+from langchain import HuggingFacePipeline
+from transformers import AutoTokenizer
+import torch
 
 class LlamaForCausalRAG:
     
@@ -38,16 +41,22 @@ class LlamaForCausalRAG:
                 verbose=True,  # Verbose is required to pass to the callback manager
             )
         else:
-            self.logger.info(f"Initialize LLM GPU configuration")
-            return LlamaCpp(
-                model_path = path, #it is important to quantisize the model in order to use it with llamaCpp check: https://colab.research.google.com/drive/1jeb9RoOVW984EpUAA_XNu1KfoyJOCe2Q#scrollTo=xBuDTDcIvIOQ
-                n_gpu_layers = self.n_gpu_layers,
-                n_batch = self.n_batch,
-                f16_kv = True,  # MUST set to True, otherwise you will run into problem after a couple of calls
-                callback_manager = self.callback_manager,
-                max_tokens = 2*4096,
-                temperature = 0.3,
-                n_ctx = self.n_ctx, 
-                verbose = True,  # Verbose is required to pass to the callback manager
+            tokenizer = AutoTokenizer.from_pretrained(path)
+
+            pipeline = pipeline(
+                "text-generation", #task
+                model=path,
+                tokenizer=tokenizer,
+                torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+                device_map="auto",
+                max_length=500,
+                do_sample=True,
+                top_k=10,
+                num_return_sequences=1,
+                eos_token_id=tokenizer.eos_token_id
             )
+
+            llm = HuggingFacePipeline(pipeline = pipeline, model_kwargs = {'temperature':0})
+            return llm
 

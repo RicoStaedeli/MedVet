@@ -3,7 +3,8 @@ logging:
   
 model:
   name: LLaMA-7b-chat
-  path: ../model/Llama-2-7b-chat.gguf
+  path2: ../model/Llama-2-7b-chat.gguf
+  path: ../model/tiiuae-falcon-7b-Q6_K.gguf
 
 acceleration:
   useGPU: True
