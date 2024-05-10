@@ -3,8 +3,9 @@ from langchain_community.vectorstores import Chroma
 
 
 from LLM.RagDocumentLoader import RagDocumentLoader
-from LLM.ModelLoaderLLM import LlamaForCausalRAG
-
+from langchain_community.embeddings.sentence_transformer import (
+    SentenceTransformerEmbeddings,
+)
 import os
 import sys
 import shutil
@@ -30,17 +31,15 @@ class RAGCreator:
         logger.info(f"Acceleration device is set to: {device}")
         self.embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs=model_kwargs) 
         self.documentLoader = RagDocumentLoader(config)
+        # create the open-source embedding function
+        self.embedding_function = SentenceTransformerEmbeddings(model_name=model_name)
+
     
     def getRetriever(self):
         logger.info(f"Start creating new vectorstore")
         if  os.path.isdir('Database/chroma_db_rag'):
-            print("Remove Vectorstore")
-            shutil.rmtree("Database/chroma_db_rag")
-            print(f"It woreked if you see a false:  {os.path.isdir('Database/chroma_db_rag')}")
-            
-            texts = self.documentLoader.process_documents()
-            vectordb = Chroma.from_documents(documents=texts, embedding=self.embeddings, persist_directory="Database/chroma_db_rag")
-            logger.info(f"Ingestion complete")
+
+            vectordb = Chroma(persist_directory="Database/chroma_db_rag", embedding_function=self.embedding_function)
             retriever = vectordb.as_retriever(search_kwargs={"k": self.target_source_chunks})
             return retriever
         else:

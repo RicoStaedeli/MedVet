@@ -101,7 +101,7 @@ def clearchat():
 
 @app.put("/generateragconversational",tags=["Text Generation"])
 def generateragconversational(txtGen: MMGeneration):
-    logger.info(f"Received request: {txtGen}")
+    # logger.info(f"Received request: {txtGen}")
     try:
         #Set the prmompt
         prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')

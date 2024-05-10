@@ -107,6 +107,7 @@ simple_langchain_kb= Conversation(
                 If you don't know the answer, just say that you don't know, don't try to make up an answer." \
 
                 {context}
+                {img_description}
 
                 Question: {question}
                 [/INST]""",
@@ -126,6 +127,7 @@ simple_langchain= Conversation(
                 If you don't know the answer, just say that you don't know, don't try to make up an answer." \
 
                 {context}
+                {img_description}
 
                 Question: {question}
                 [/INST]""",

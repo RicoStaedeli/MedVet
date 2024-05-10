@@ -73,6 +73,10 @@ class MMLLMService:
     ################################################################################################################   
     def clear_history(self):
         self.conversation = default_conversation.copy() 
+        try:
+            self.memory.clear()
+        except:
+            logger.info("memory doesn't exist")
        
     def set_assistantMode(self, assistant_mode):
         print(assistant_mode)
@@ -329,39 +333,44 @@ class MMLLMService:
         # With this we load the memory of the chat history
         # This adds a "memory" key to the input object
         loaded_memory = RunnablePassthrough.assign(
-            chat_history=RunnableLambda(self.memory.load_memory_variables) | itemgetter("history"),
+            chat_history=RunnableLambda(self.memory.load_memory_variables) | itemgetter("history")
         )
         
         # It is possible that a user asks a follow up question to the previous context. Therefore a first chain is created to generate a standalone question with the complete information. 
         # This question will later be used to generate the answer
         standalone_question = {
+            "img_description": lambda x: x["img_description"],
             "standalone_question": {
                 "question": lambda x: x["question"],
+               
                 "chat_history": lambda x: get_buffer_string(x["chat_history"]),
-            }
+            }            
             | CONDENSE_QUESTION_PROMPT
             | llm_standalone,
         }
-        
-        # this retrieves the most relevant documents
+
         retrieved_documents = {
             "docs": itemgetter("standalone_question") | self.retriever,
             "question": lambda x: x["standalone_question"],
+            "img_description": lambda x: x["img_description"],
         }
-        
-        # This part creates the parameters for the answer generation of the answer chain
+
         final_inputs = {
             "context": lambda x: self._combine_documents(x["docs"]),
             "sources": lambda x: self._sources_documents(x["docs"]),
             "question": itemgetter("question"),
+            "img_description": lambda x: x["img_description"],
+            #"img_description": lambda x: self.get_image_description(x),
         }
-        
+
         answer_chain = {
             "answer": final_inputs | ANSWER_PROMPT | llm,
             "question": itemgetter("question"),
             "context": final_inputs["context"],
-            "sources": final_inputs["sources"]
+            "sources": final_inputs["sources"],
+            "img_description": final_inputs["img_description"]
         }
+
         
         final_chain = loaded_memory | standalone_question | retrieved_documents | answer_chain
         return final_chain
@@ -370,20 +379,23 @@ class MMLLMService:
         document_prompt = self.DEFAULT_DOCUMENT_PROMPT
         doc_strings = [format_document(doc, document_prompt) for doc in docs]
         return document_separator.join(doc_strings)
-    
-        
+     
     def _sources_documents(self,docs):
         sources = []
         for document in docs:
+            if "page" in document.metadata:
+                page = document.metadata["page"]
+            else:
+                page = "unknown"
             sources.append({
                 "source": document.metadata["source"], 
-                "page": document.metadata["page"]
+                "page": page
             })
         return sources
     
     
    
-    def call_conversational_rag(self, question):
+    def call_conversational_rag(self, question,image_description):
         """
         Calls a conversational RAG (Retrieval-Augmented Generation) model to generate an answer to a given question.
 
@@ -398,12 +410,15 @@ class MMLLMService:
         """
         
         # Prepare the input for the RAG model
-        inputs = {"question": question}
-
-        # Invoke the RAG model to get an answer
+        if(image_description != ""):
+            img_description = f"Description of provided imagge \n {image_description}"
+        else:
+            img_description = ""
+        
+        inputs = {"question": question, "img_description": img_description}
+        
         result = self.rag_conversational_chain.invoke(inputs)
         
-        print(result)
         # Save the current question and its answer to memory for future context
         self.memory.save_context(inputs, {"answer": result["answer"]})
         
@@ -431,7 +446,7 @@ class MMLLMService:
             print(f"Generate answer only with LlaMA")
             try:
                 prompt_llama = prompt_user
-                response_llama = self.call_conversational_rag(question=prompt_llama)
+                response_llama = self.call_conversational_rag(question=prompt_llama,image_description="")
                 self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava="", prompt_llama=prompt_llama, answer_llava="", answer_llama=response_llama["answer"], answer_combined = "", image = "", mode_display="", mode_assistant=mode_assistant, mode_rag=use_rag)
 
                 status = "OK"
@@ -453,16 +468,17 @@ class MMLLMService:
             print(f"Start generating Answer with LLaMA and LLaVa, display separate and with RAG")
             try:
                 prompt_llama = prompt_user
-                response_llama = self.call_conversational_rag(question=prompt_llama)
+                response_llama = self.call_conversational_rag(question=prompt_llama,image_description="")
                 
                 prompt_llava = self.formatPromptLlaVA(prompt_user)
                 response_llava = self.generateLLaVAresponse(image=image, ip_address_llava=ip_address_llava , max_new_tokens=max_new_tokens, prompt_llava=prompt_llava, temperature=temperature)
                 
                 self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["answer"], answer_combined = "", image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)
                 
-                response = f"**Result LlaMA and RAG**\n\n{response_llama['result']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['sources'])}\n\n**Result LlaVA- Med**\n\n{response_llava["result"]}"
+                response = f"**Result LlaMA and RAG**\n\n{response_llama['answer']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['sources'])}\n\n**Result LlaVA- Med**\n\n{response_llava["result"]}"
                 status = "OK"
-            except: 
+            except Exception as e: 
+                logger.info(f"Failed to generate Answer {e}")
                 response = "Failed to generate Answer"
                 response_llama = ""
                 response_llava = ""
@@ -473,24 +489,24 @@ class MMLLMService:
         elif prompt_user != "" and image != "" and display_combined == MODE_DISPLAY.COMBINED:
             print(f"Generate combined answer")
             try:
+                             
+                prompt_llava = self.formatPromptLlaVA(prompt_user)
+                response_llava = self.generateLLaVAresponse(image=image, ip_address_llava=ip_address_llava , max_new_tokens=max_new_tokens, prompt_llava=prompt_llava, temperature=temperature)
                 
-                #ToDo
+                print(f"Response LlaVA: {response_llava["result"]}")
                 
-                # prompt_llava = self.formatPromptLlaVA(prompt_user)
-                # response_llava = self.generateLLaVAresponse(image=image, ip_address_llava=ip_address_llava , max_new_tokens=max_new_tokens, prompt_llava=prompt_llava, temperature=temperature)
-                
-                # prompt_llama = self.formatPromptLlaMACombined(prompt_user,img_desc=prompt_llava)
-                # response_llama = self.generateLLaMAresponse(prompt_llama=prompt_llama,use_rag=use_rag)
+                img_desc = response_llava["result"]
+                prompt_llama = prompt_user
+                response_llama = self.call_conversational_rag(question=prompt_llama,image_description=img_desc)
                 
                 
-                # self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["result"], answer_combined = response_llama["result"], image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)
+                self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["answer"], answer_combined = response_llama["answer"], image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)
                 
-                # response = f"**Result combination of LlaVA- MEd and LlaMA with RAG**\n\n{response_llama['result']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['documents'])}"
+                response = f"**Result combination of LlaVA- MEd and LlaMA with RAG**\n\n{response_llama['answer']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['sources'])}"
                 status = "OK"
-                response_llama = ""
-                response_llava = ""
-                response = ""
-            except: 
+            
+            except Exception as e: 
+                logger.info(f"Failed to generate Answer {e}")
                 response = "Failed to generate Answer"
                 response_llama = ""
                 response_llava = ""
