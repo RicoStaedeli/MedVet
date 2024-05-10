@@ -5,6 +5,9 @@ from langchain_community.vectorstores import Chroma
 from LLM.RagDocumentLoader import RagDocumentLoader
 from LLM.ModelLoaderLLM import LlamaForCausalRAG
 
+import os
+import sys
+import shutil
 #Utils
 from Utils.logger import get_logger
 from Utils.config import load_config
@@ -30,8 +33,19 @@ class RAGCreator:
     
     def getRetriever(self):
         logger.info(f"Start creating new vectorstore")
-        texts = self.documentLoader.process_documents()
-        vectordb = Chroma.from_documents(documents=texts, embedding=self.embeddings, persist_directory="Database/chroma_db_rag")
-        logger.info(f"Ingestion complete")
-        retriever = vectordb.as_retriever(search_kwargs={"k": self.target_source_chunks})
-        return retriever
+        if  os.path.isdir('Database/chroma_db_rag'):
+            print("Remove Vectorstore")
+            shutil.rmtree("Database/chroma_db_rag")
+            print(f"It woreked if you see a false:  {os.path.isdir('Database/chroma_db_rag')}")
+            
+            texts = self.documentLoader.process_documents()
+            vectordb = Chroma.from_documents(documents=texts, embedding=self.embeddings, persist_directory="Database/chroma_db_rag")
+            logger.info(f"Ingestion complete")
+            retriever = vectordb.as_retriever(search_kwargs={"k": self.target_source_chunks})
+            return retriever
+        else:
+            texts = self.documentLoader.process_documents()
+            vectordb = Chroma.from_documents(documents=texts, embedding=self.embeddings, persist_directory="Database/chroma_db_rag")
+            logger.info(f"Ingestion complete")
+            retriever = vectordb.as_retriever(search_kwargs={"k": self.target_source_chunks})
+            return retriever

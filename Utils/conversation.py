@@ -39,6 +39,9 @@ class Conversation:
     
     def append_message(self, role, message):
         self.messages.append([role, message])
+    
+    def getSystemPrompt(self):
+        return self.system
 
 
     def copy(self):
@@ -97,6 +100,44 @@ simple_conv_falcon= Conversation(
     model_type = "falcon"
 )
 
+simple_langchain_kb= Conversation(
+    system="""[INST] You are an intelligent assistant designed to be a knowledge base for veterinarians. You provide detailed and specific responses related to veterinary medicine. \
+                Use your complete knowledge to explain the aked questions very specific. \
+                Follow the instructions carefully and explain your answers in detail. \
+                If you don't know the answer, just say that you don't know, don't try to make up an answer." \
+
+                {context}
+
+                Question: {question}
+                [/INST]""",
+    roles=("human", "Assistant"),
+    messages=(
+        ("human", "Hi!"),
+        ("Assistant", "Hi there!  How can I help you?")
+    ),
+    offset=2,
+    model_type = "langchain"
+)
+
+simple_langchain= Conversation(
+    system="""[INST] You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment.\
+                You analyse the provided case and tailor your answers to the specific species and context of the inquiry. \
+                Follow the instructions carefully and explain your answers in detail. \
+                If you don't know the answer, just say that you don't know, don't try to make up an answer." \
+
+                {context}
+
+                Question: {question}
+                [/INST]""",
+    roles=("human", "Assistant"),
+    messages=(
+        ("human", "Hi!"),
+        ("Assistant", "Hi there!  How can I help you?")
+    ),
+    offset=2,
+    model_type = "langchain"
+)
+
 
 # default_conversation = simple_conv_Llama_casesolver
 default_conversation = simple_conv_falcon
@@ -105,7 +146,9 @@ conv_templates = {
     "default": simple_conv_Llama_casesolver,
     "simple_kb": simple_conv_Llama_Knowledgebase,
     "simple_case": simple_conv_Llama_casesolver,
-    "simpe_falcon":simple_conv_falcon
+    "simpe_falcon":simple_conv_falcon,
+    "simple_langchain": simple_langchain,
+    "simple_langchain_kb": simple_langchain_kb,
 }
 
 

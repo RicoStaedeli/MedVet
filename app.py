@@ -14,6 +14,7 @@ print(config)
 
 #Requests
 from RequestModels.requestMMGeneration import MMGeneration
+from RequestModels.requestQuestion import Questions
 
 #Serices
 from MMLLM.ModelService import MMLLMService
@@ -33,9 +34,10 @@ app = FastAPI(
         swagger_ui_parameters={"syntaxHighlight.theme": "obsidian"}
     )
 
-##############################
-#### Enable CORS 
-##############################
+########################################################################################################################
+################################## Enable CORS #########################################################################
+########################################################################################################################
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,9 +46,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-##############################
-#### API Endpoints
-##############################
+########################################################################################################################
+##############################    API Endpoints     ####################################################################
+########################################################################################################################
 @app.get("/", include_in_schema=False)
 async def read_root():
     logger.info(f"Redirect to /docs")
@@ -87,7 +89,7 @@ def generate_answer(txtGen: MMGeneration):
         logger.error(f"Error during text generation: {e}")
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
         return {"result":"Failed"}
-   
+    
 @app.post("/clearchat",tags=["Text Generation"])
 def clearchat():
     try:
@@ -96,10 +98,68 @@ def clearchat():
         logger.error(f"Error during text generation: {e}")
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
         return {"result":"Failed"}
+
+@app.put("/generateragconversational",tags=["Text Generation"])
+def generateragconversational(txtGen: MMGeneration):
+    logger.info(f"Received request: {txtGen}")
+    try:
+        #Set the prmompt
+        prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
+        logger.info(f"replace disturbing characters and generate prompt: {prompt}")
+        agent_id = txtGen.agent_id
+        ip_address_llava = txtGen.ip_address_llava
+        image = txtGen.img
+        max_new_tokens = txtGen.max_new_tokens
+        temperature = txtGen.temperature
+        
+        if txtGen.display_combined:
+            display_combined = MODE_DISPLAY.COMBINED
+        else:
+            display_combined = MODE_DISPLAY.SEPARATE
+        
+        if txtGen.use_rag:
+            use_rag = MODE_RAG.RAG
+        else:
+            use_rag = MODE_RAG.NORAG
+        
+        mode_assistant = txtGen.mode_assistant
+        mmService.set_assistantMode(mode_assistant)
+        
+        response = mmService.generateAnswerConversionChain(agent_id=agent_id, display_combined=display_combined, image=image, ip_address_llava=ip_address_llava,max_new_tokens=max_new_tokens, temperature=temperature,mode_assistant=mode_assistant, prompt_user=prompt,use_rag=use_rag )
+
+        return response
     
-##############################
-#### HTTP Exception
-##############################
+    except Exception as e:
+        logger.error(f"Error during text generation: {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
+    
+@app.put("/ragconversational",tags=["Text Generation"])
+def ragconversational(load: Questions):
+    try:
+        response = mmService.call_conversational_rag(load.prompt)
+        return {"Response":response}
+        
+    except Exception as e:
+        logger.error(f"Error during text generation: {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
+    
+
+@app.put("/ragdocs",tags=["Text Generation"])
+def getDocuments(load: Questions):
+    try:
+        response = mmService.getRelevantDocuments(load.prompt)
+        return {"Response":response}
+    except Exception as e:
+        logger.error(f"Error during text generation: {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}    
+
+
+##########################################################################################
+##############################   HTTP Exception             ##############################
+##########################################################################################
 
 class UnicornException(Exception):
     def __init__(self, name: str):
