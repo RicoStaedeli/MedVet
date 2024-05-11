@@ -5,7 +5,3 @@ class MODE_DISPLAY:
 class MODE_RAG:
     RAG="RAG"
     NORAG="No RAG"
-    
-class MODE_ASSISTANT:
-    KB="Knowledgebase"
-    CASE="Casesolver"

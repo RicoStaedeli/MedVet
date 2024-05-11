@@ -26,7 +26,7 @@ from operator import itemgetter
 
 
 #Utils
-from Utils.constants import MODE_ASSISTANT, MODE_DISPLAY, MODE_RAG
+from Utils.constants import MODE_DISPLAY, MODE_RAG
 from Utils.conversation import (default_conversation, conv_templates)
 from Utils.logger import get_logger
 from Utils.config import load_config
@@ -49,12 +49,11 @@ class MMLLMService:
         llm = llamaModel.load_llm(model_path)
         llm_standalone = llamaModel.load_llm(model_path)
         
-
         ragCreator = RAGCreator()
         self.retriever = ragCreator.getRetriever()
         
         self.conversation = default_conversation.copy()
-        self.assistant_mode = MODE_ASSISTANT.CASE
+        
 
         self.qaPipeline = RetrievalQA.from_chain_type(
             llm=llm,
@@ -64,43 +63,41 @@ class MMLLMService:
             verbose=True
 
         )
-        self.conversation_langchain = conv_templates["simple_langchain_llama3"].copy()
         
-        self.rag_conversational_chain = self.buildConversationalRAG(llm_standalone=llm_standalone,llm=llm)    
+        self.conversation_langchain = conv_templates["simple_langchain_kb"].copy()
+        self.conversation_template = "simple_langchain_kb"
+        
+        self.rag_conversational_chain = self.buildChainForConversationalRAG(llm_standalone=llm_standalone,llm=llm)    
     
-    
-    
-    ################################################################################################################
-    ############################### QA Retrieval Chain with LLaMA Specific Templates ###############################
-    ################################################################################################################   
     def clear_history(self):
         self.conversation = default_conversation.copy() 
         try:
             self.memory.clear()
         except:
             logger.info("memory doesn't exist")
-       
-    def set_assistantMode(self, assistant_mode):
-        print(assistant_mode)
-        if self.assistant_mode != assistant_mode:
-            logger.info(f"Assistant Mode changed to {assistant_mode}")
-            if assistant_mode == MODE_ASSISTANT.KB:
-                template_name = "simple_kb"
-                self.assistant_mode = MODE_ASSISTANT.KB
-               
-            else:
-                template_name = "simple_case"
-                self.assistant_mode = MODE_ASSISTANT.CASE
+    
+    
+    def set_assistantMode(self, conversation_template):
+        if self.conversation_template != conversation_template:
+            logger.info(f"Conversation template changed to {conversation_template}")
+            
+            self.conversation_langchain = conv_templates[conversation_template].copy()
 
-            tempConversation = conv_templates[template_name].copy()
+            
+            #legacy
+            tempConversation = conv_templates[conversation_template].copy()
             tempConversation.messages = self.conversation.messages #copy chat history
-            tempConversation.messages[0] = conv_templates[template_name].messages[0] #use first two messages from conversation template
-            tempConversation.messages[1] = conv_templates[template_name].messages[1]
+            tempConversation.messages[0] = conv_templates[conversation_template].messages[0] #use first two messages from conversation template
+            tempConversation.messages[1] = conv_templates[conversation_template].messages[1]           
+            self.conversation = tempConversation    
             
-            self.conversation = tempConversation
             
-    
-    
+            
+    ################################################################################################################
+    #########################    ------------     Legacy  --------       ###########################################
+    ################################################################################################################
+    ############################### QA Retrieval Chain with LLaMA Specific Templates ###############################
+    ################################################################################################################     
     def formatPromptLlaMACombined(self, user_message, img_desc):       
         prompt_template = PromptTemplate.from_template(
             "<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} \n Image Description: {img_desc}[/INST]"
@@ -110,7 +107,6 @@ class MMLLMService:
         formatted = prompt_template.format(system_prompt=system_prompt, user_message=user_message, img_desc= img_desc)
         return formatted
     
-    
     def formatPromptLlaMA(self, user_message):
         self.conversation.append_message(role=self.conversation.roles[0],message=user_message)
         
@@ -118,17 +114,7 @@ class MMLLMService:
 
         formatted = self.conversation.get_prompt()
         return formatted
-    
-    
-    def formatPromptLlaVA(self, prompt):
-        prompt_template = PromptTemplate.from_template(
-            "Case Description: {prompt} \n\n Describe what you see in the image and what you interpret with this description"
-        )
-        
-        formatted = prompt_template.format(prompt=prompt)
-        return formatted
-        
-    
+              
     def generateLLaVAresponse(self, ip_address_llava, prompt_llava, temperature, max_new_tokens, image):
         url = f"http://{ip_address_llava}/generate"
         data = {
@@ -293,13 +279,10 @@ class MMLLMService:
             print(f"No valid configuration")        
     
     
-        
-    
-    
     ################################################################################################################
     ##################### Runnable Retrieval Chain with Langchain Specific Templates  and Convesation ##############
     ################################################################################################################   
-  
+    
     def getRelevantDocuments(self,question):
         """
         This function retrieves the most relevant Documents for the question.
@@ -308,8 +291,15 @@ class MMLLMService:
         print(f"Documents: {docs}")
         return docs
     
+    def formatPromptLlaVA(self, prompt):
+        prompt_template = PromptTemplate.from_template(
+            "Case Description: {prompt} \n\n Describe what you see in the image and what you interpret with this description"
+        )
+        
+        formatted = prompt_template.format(prompt=prompt)
+        return formatted
     
-    def buildConversationalRAG(self,llm_standalone,llm):
+    def buildChainForConversationalRAG(self,llm_standalone,llm):
         
         #This template is used to create a standalone question  outcommented: Do the rephrase only if there is a chat history.
         _template = """
@@ -323,8 +313,14 @@ class MMLLMService:
         """
         CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(_template)
         
+        template = """<s>[INST] <<SYS>> {system_prompt}<</SYS>> 
+
+            {context}
+            {img_description}
+
+            Question: {question}
+            [/INST]"""#self.conversation_langchain.getPromptTemplate()
         
-        template = self.conversation_langchain.getSystemPrompt()
         ANSWER_PROMPT = ChatPromptTemplate.from_template(template)
         
         self.DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
@@ -340,7 +336,8 @@ class MMLLMService:
         
         # It is possible that a user asks a follow up question to the previous context. Therefore a first chain is created to generate a standalone question with the complete information. 
         # This question will later be used to generate the answer
-        standalone_question = {
+        standalone_question = RunnableParallel({
+            "system_prompt": lambda x: x["system_prompt"],
             "img_description": lambda x: x["img_description"],
             "standalone_question": {
                 "question": lambda x: x["question"],
@@ -350,29 +347,31 @@ class MMLLMService:
             | llm_standalone
             | StrOutputParser()
         }
-
-        retrieved_documents = {
+        )
+    
+        retrieved_documents = RunnableParallel({
+            "system_prompt": lambda x: x["system_prompt"],
             "docs": itemgetter("standalone_question") | self.retriever,
             "question": lambda x: x["standalone_question"],
-            "img_description": lambda x: x["img_description"],
-        }
+            "img_description":lambda x: x["img_description"],
+        })
 
         final_inputs = {
+            "system_prompt": lambda x: x["system_prompt"],
             "context": lambda x: self._combine_documents(x["docs"]),
             "sources": lambda x: self._sources_documents(x["docs"]),
             "question": itemgetter("question"),
             "img_description": lambda x: x["img_description"],
-            #"img_description": lambda x: self.get_image_description(x),
         }
 
         answer_chain = {
+            "system_prompt": lambda x: x["system_prompt"],
             "answer": final_inputs | ANSWER_PROMPT | llm | StrOutputParser(),
             "question": itemgetter("question"),
             "context": final_inputs["context"],
             "sources": final_inputs["sources"],
             "img_description": final_inputs["img_description"]
         }
-
         
         final_chain = loaded_memory | standalone_question | retrieved_documents | answer_chain
         return final_chain
@@ -413,11 +412,11 @@ class MMLLMService:
         
         # Prepare the input for the RAG model
         if(image_description != ""):
-            img_description = f"Description of provided imagge \n {image_description}"
+            img_description = f"Description of provided imagge: \n {image_description}"
         else:
             img_description = ""
-        
-        inputs = {"question": question, "img_description": img_description}
+        system_prompt = self.conversation_langchain.getPromptTemplate()
+        inputs = {"question": question, "img_description": img_description, "system_prompt": system_prompt}
         
         result = self.rag_conversational_chain.invoke(inputs)
         

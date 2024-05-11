@@ -40,7 +40,7 @@ class Conversation:
     def append_message(self, role, message):
         self.messages.append([role, message])
     
-    def getSystemPrompt(self):
+    def getPromptTemplate(self):
         return self.system
 
 
@@ -99,18 +99,14 @@ simple_conv_falcon= Conversation(
     offset=2,
     model_type = "falcon"
 )
-"<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} \n Image Description: {img_desc}[/INST]"
+
+
+
 simple_langchain_kb= Conversation(
-    system="""<s>[INST] <<SYS>> You are an intelligent assistant designed to be a knowledge base for veterinarians. You provide detailed and specific responses related to veterinary medicine. \
-                Use your complete knowledge to explain the aked questions very specific. \
-                Follow the instructions carefully and explain your answers in detail. \
-                If you don't know the answer, just say that you don't know, don't try to make up an answer. <</SYS>> \
-
-                {context}
-                {img_description}
-
-                Question: {question}
-                [/INST]""",
+    system="""You are an intelligent assistant designed to be a knowledge base for veterinarians. You provide detailed and specific responses related to veterinary medicine.
+Use your complete knowledge to explain the aked questions very specific.
+Follow the instructions carefully and explain your answers in detail.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.""",
     roles=("human", "Assistant"),
     messages=(
         ("human", "Hi!"),
@@ -120,17 +116,12 @@ simple_langchain_kb= Conversation(
     model_type = "langchain"
 )
 
-simple_langchain= Conversation(
-    system="""[INST] You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment.\
-                You analyse the provided case and tailor your answers to the specific species and context of the inquiry. \
-                Follow the instructions carefully and explain your answers in detail. \
-                If you don't know the answer, just say that you don't know, don't try to make up an answer." \
 
-                {context}
-                {img_description}
-
-                Question: {question}
-                [/INST]""",
+simple_langchain_case= Conversation(
+    system="""You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment.
+You analyse the provided case and tailor your answers to the specific species and context of the inquiry.
+Follow the instructions carefully and explain your answers in detail.
+If you don't know the answer, just say that you don't know, don't try to make up an answer.""",
     roles=("human", "Assistant"),
     messages=(
         ("human", "Hi!"),
@@ -173,14 +164,14 @@ If you don't know the answer, just say that you don't know, don't try to make up
 
 
 # default_conversation = simple_conv_Llama_casesolver
-default_conversation = simple_conv_falcon
+default_conversation = simple_langchain_kb
 
 conv_templates = {
     "default": simple_conv_Llama_casesolver,
     "simple_kb": simple_conv_Llama_Knowledgebase,
     "simple_case": simple_conv_Llama_casesolver,
     "simpe_falcon":simple_conv_falcon,
-    "simple_langchain": simple_langchain,
+    "simple_langchain_case": simple_langchain_case,
     "simple_langchain_kb": simple_langchain_kb,
     "simple_langchain_llama3": simple_langchain_llama3,
 }

@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 #Utils
-from Utils.constants import MODE_ASSISTANT, MODE_DISPLAY, MODE_RAG
-
+from Utils.constants import MODE_DISPLAY, MODE_RAG
+from Utils.conversation import (default_conversation, conv_templates)
 from Utils.logger import get_logger
 from Utils.config import load_config
 config = load_config("config/cfg.yaml")
@@ -156,6 +156,20 @@ def getDocuments(load: Questions):
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
         return {"result":"Failed"}    
 
+
+@app.get("/convtemplates",tags=["Text Generation"])
+def ragconversational():
+    try:
+        templates = []
+        for key in conv_templates.keys():
+            if conv_templates[key].model_type == "langchain":
+                templates.append(key)
+        return {"Response":templates}
+        
+    except Exception as e:
+        logger.error(f"Error during retrieving conversation templates {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
 
 ##########################################################################################
 ##############################   HTTP Exception             ##############################
