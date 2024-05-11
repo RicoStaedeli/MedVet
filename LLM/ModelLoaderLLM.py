@@ -45,8 +45,8 @@ class LlamaForCausalRAG:
                 n_batch = self.n_batch,
                 f16_kv = True,  # MUST set to True, otherwise you will run into problem after a couple of calls
                 callback_manager = self.callback_manager,
-                max_tokens = 2*4096,
-                temperature = 0.3,
+                max_tokens = 4096,
+                temperature = 0.9,
                 n_ctx = self.n_ctx, 
                 verbose = True,  # Verbose is required to pass to the callback manager
             )

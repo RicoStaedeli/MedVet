@@ -2,6 +2,7 @@ import json
 import requests
 
 from LLM.ModelLoaderLLM import LlamaForCausalRAG
+from LLM.ModelLoaderLLMHF import LlamaForCausalRAGHF
 from LLM.RAGCreator import RAGCreator
 from Database.DbWriter import DbWriter
 
@@ -41,6 +42,7 @@ class MMLLMService:
     
     def __init__(self,config: dict) -> None:
         llamaModel = LlamaForCausalRAG(config,logger)
+        # llamaModel = LlamaForCausalRAGHF(config,logger)
         self.databaseWriter = DbWriter(config)
         
         model_path = config.get("model", {}).get("path")
@@ -62,7 +64,7 @@ class MMLLMService:
             verbose=True
 
         )
-        self.conversation_langchain = conv_templates["simple_langchain_kb"].copy()
+        self.conversation_langchain = conv_templates["simple_langchain_llama3"].copy()
         
         self.rag_conversational_chain = self.buildConversationalRAG(llm_standalone=llm_standalone,llm=llm)    
     
@@ -342,11 +344,11 @@ class MMLLMService:
             "img_description": lambda x: x["img_description"],
             "standalone_question": {
                 "question": lambda x: x["question"],
-               
                 "chat_history": lambda x: get_buffer_string(x["chat_history"]),
             }            
             | CONDENSE_QUESTION_PROMPT
-            | llm_standalone,
+            | llm_standalone
+            | StrOutputParser()
         }
 
         retrieved_documents = {
@@ -364,7 +366,7 @@ class MMLLMService:
         }
 
         answer_chain = {
-            "answer": final_inputs | ANSWER_PROMPT | llm,
+            "answer": final_inputs | ANSWER_PROMPT | llm | StrOutputParser(),
             "question": itemgetter("question"),
             "context": final_inputs["context"],
             "sources": final_inputs["sources"],

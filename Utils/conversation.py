@@ -99,12 +99,12 @@ simple_conv_falcon= Conversation(
     offset=2,
     model_type = "falcon"
 )
-
+"<s>[INST] <<SYS>> {system_prompt} <</SYS>> {user_message} \n Image Description: {img_desc}[/INST]"
 simple_langchain_kb= Conversation(
-    system="""[INST] You are an intelligent assistant designed to be a knowledge base for veterinarians. You provide detailed and specific responses related to veterinary medicine. \
+    system="""<s>[INST] <<SYS>> You are an intelligent assistant designed to be a knowledge base for veterinarians. You provide detailed and specific responses related to veterinary medicine. \
                 Use your complete knowledge to explain the aked questions very specific. \
                 Follow the instructions carefully and explain your answers in detail. \
-                If you don't know the answer, just say that you don't know, don't try to make up an answer." \
+                If you don't know the answer, just say that you don't know, don't try to make up an answer. <</SYS>> \
 
                 {context}
                 {img_description}
@@ -140,6 +140,37 @@ simple_langchain= Conversation(
     model_type = "langchain"
 )
 
+simple_langchain_llama3= Conversation(
+    system="""<|begin_of_text|>
+<|start_header_id|>
+  system
+<|end_header_id|>
+You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment.
+You analyse the provided case and tailor your answers to the specific species and context of the inquiry. 
+Follow the instructions carefully and explain your answers in detail. 
+If you don't know the answer, just say that you don't know, don't try to make up an answer." 
+<|eot_id|>
+<|start_header_id|>
+   user
+<|end_header_id|>
+  Answer the user question based on the context provided below
+  Context :{context} {img_description}
+  Question: {question}
+<|eot_id|>
+<|start_header_id|>
+  assistant
+<|end_header_id|>
+
+[INST]""",
+    roles=("human", "Assistant"),
+    messages=(
+        ("human", "Hi!"),
+        ("Assistant", "Hi there!  How can I help you?")
+    ),
+    offset=2,
+    model_type = "langchain"
+)
+
 
 # default_conversation = simple_conv_Llama_casesolver
 default_conversation = simple_conv_falcon
@@ -151,6 +182,7 @@ conv_templates = {
     "simpe_falcon":simple_conv_falcon,
     "simple_langchain": simple_langchain,
     "simple_langchain_kb": simple_langchain_kb,
+    "simple_langchain_llama3": simple_langchain_llama3,
 }
 
 

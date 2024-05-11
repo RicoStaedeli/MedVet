@@ -2,10 +2,12 @@ from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.llms import LlamaCpp
 from langchain import HuggingFacePipeline
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer,AutoModelForCausalLM,AutoConfig
+
+from time import time
 import torch
 
-class LlamaForCausalRAG:
+class LlamaForCausalRAGHF:
     
     def __init__(self,config,logger):
         # Callbacks support token-wise streaming
@@ -26,7 +28,6 @@ class LlamaForCausalRAG:
                 self.n_ctx = 4096
         else:
             self.device = "cpu"
-    
        
 
     def load_llm(self,path):
@@ -41,22 +42,27 @@ class LlamaForCausalRAG:
                 verbose=True,  # Verbose is required to pass to the callback manager
             )
         else:
+            from transformers import pipeline
+            #https://pub.towardsai.net/retrieval-augmented-generation-with-llama-3-chromadb-and-langchain-1d524624af1d
+            model_config = AutoConfig.from_pretrained(path,
+                                          trust_remote_code=True,
+                                          max_new_tokens=1024)
+            
+            model = AutoModelForCausalLM.from_pretrained(path,
+                                             trust_remote_code=True,
+                                             config=model_config)
+            model = model.to("mps")
+            
             tokenizer = AutoTokenizer.from_pretrained(path)
+            
+            pipe = pipeline("text-generation",
+                    model=model,
+                    tokenizer=tokenizer,
+                    torch_dtype=torch.float16,
+                    max_length=3000,
+                    device_map="auto",)
 
-            pipeline = pipeline(
-                "text-generation", #task
-                model=path,
-                tokenizer=tokenizer,
-                torch_dtype=torch.bfloat16,
-                trust_remote_code=True,
-                device_map="auto",
-                max_length=500,
-                do_sample=True,
-                top_k=10,
-                num_return_sequences=1,
-                eos_token_id=tokenizer.eos_token_id
-            )
-
-            llm = HuggingFacePipeline(pipeline = pipeline, model_kwargs = {'temperature':0})
+            llm = HuggingFacePipeline(pipeline=pipe)
+            
             return llm
 

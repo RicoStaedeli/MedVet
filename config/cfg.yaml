@@ -2,9 +2,12 @@ logging:
   level: DEBUG
   
 model:
+  name1: Meta-Llama-3-8B-Instruct
   name: LLaMA-7b-chat
+  path1: ../model/Meta-Llama-3-8B-Instruct
   path: ../model/Llama-2-7b-chat.gguf
   path2: ../model/tiiuae-falcon-7b-Q6_K.gguf
+  path3: ../model/LlaMA_3_813b_instruct_Q8.gguf
 
 acceleration:
   useGPU: True
