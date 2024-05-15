@@ -46,7 +46,7 @@ class LlamaForCausalRAGHF:
             #https://pub.towardsai.net/retrieval-augmented-generation-with-llama-3-chromadb-and-langchain-1d524624af1d
             model_config = AutoConfig.from_pretrained(path,
                                           trust_remote_code=True,
-                                          max_new_tokens=1024)
+                                          max_new_tokens=10)
             
             model = AutoModelForCausalLM.from_pretrained(path,
                                              trust_remote_code=True,
@@ -57,11 +57,9 @@ class LlamaForCausalRAGHF:
             
             pipe = pipeline("text-generation",
                     model=model,
-                    tokenizer=tokenizer,
-                    torch_dtype=torch.float16,
-                    max_length=3000,
-                    device_map="auto",)
-
+                    tokenizer=tokenizer, 
+                    max_new_tokens=10)
+            
             llm = HuggingFacePipeline(pipeline=pipe)
             
             return llm

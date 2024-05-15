@@ -55,7 +55,7 @@ async def read_root():
     return RedirectResponse(url='/docs')
 
    
-@app.put("/generate",tags=["Text Generation"])
+@app.put("/generatelagacy",tags=["Text Generation"])
 def generate_answer(txtGen: MMGeneration):
     logger.info(f"Received request: {txtGen}")
     try:
@@ -99,7 +99,7 @@ def clearchat():
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
         return {"result":"Failed"}
 
-@app.put("/generateragconversational",tags=["Text Generation"])
+@app.put("/generate",tags=["Text Generation"])
 def generateragconversational(txtGen: MMGeneration):
     # logger.info(f"Received request: {txtGen}")
     try:
@@ -111,6 +111,7 @@ def generateragconversational(txtGen: MMGeneration):
         image = txtGen.img
         max_new_tokens = txtGen.max_new_tokens
         temperature = txtGen.temperature
+        chaintype = txtGen.chaintype
         
         if txtGen.display_combined:
             display_combined = MODE_DISPLAY.COMBINED
@@ -125,7 +126,7 @@ def generateragconversational(txtGen: MMGeneration):
         mode_assistant = txtGen.mode_assistant
         mmService.set_assistantMode(mode_assistant)
         
-        response = mmService.generateAnswerConversionChain(agent_id=agent_id, display_combined=display_combined, image=image, ip_address_llava=ip_address_llava,max_new_tokens=max_new_tokens, temperature=temperature,mode_assistant=mode_assistant, prompt_user=prompt,use_rag=use_rag )
+        response = mmService.generateAnswerConversionChainRAG(agent_id=agent_id, display_combined=display_combined, image=image, ip_address_llava=ip_address_llava,max_new_tokens=max_new_tokens, temperature=temperature,mode_assistant=mode_assistant, prompt_user=prompt,use_rag=use_rag,chaintype=chaintype )
 
         return response
     
@@ -137,7 +138,7 @@ def generateragconversational(txtGen: MMGeneration):
 @app.put("/ragconversational",tags=["Text Generation"])
 def ragconversational(load: Questions):
     try:
-        response = mmService.call_conversational_rag(load.prompt)
+        response = mmService.call_Chain(load.prompt)
         return {"Response":response}
         
     except Exception as e:
