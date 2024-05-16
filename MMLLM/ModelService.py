@@ -8,16 +8,14 @@ from Database.DbWriter import DbWriter
 
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.runnables import RunnableParallel
 from langchain_core.messages import HumanMessage
 
 
 from langchain.schema import format_document
 from langchain_core.messages import get_buffer_string
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough,RunnableParallel
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts.prompt import PromptTemplate
 from langchain_core.prompts.chat import ChatPromptTemplate

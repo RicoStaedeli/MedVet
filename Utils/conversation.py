@@ -126,27 +126,11 @@ simple_langchain_case= Conversation(
 )
 
 simple_langchain_llama3= Conversation(
-    system="""<|begin_of_text|>
-<|start_header_id|>
-  system
-<|end_header_id|>
+    system="""
 You are an intelligent assistant designed to support veterinarians by providing detailed and specific responses related to veterinary medicine, including diagnosis and treatment.
 You analyse the provided case and tailor your answers to the specific species and context of the inquiry. 
 Follow the instructions carefully and explain your answers in detail. 
-If you don't know the answer, just say that you don't know, don't try to make up an answer." 
-<|eot_id|>
-<|start_header_id|>
-   user
-<|end_header_id|>
-  Answer the user question based on the context provided below
-  Context :{context} {img_description}
-  Question: {question}
-<|eot_id|>
-<|start_header_id|>
-  assistant
-<|end_header_id|>
-
-[INST]""",
+If you don't know the answer, just say that you don't know, don't try to make up an answer.""",
     roles=("human", "Assistant"),
     messages=(
         ("human", "Hi!"),

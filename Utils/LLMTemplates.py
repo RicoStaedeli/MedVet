@@ -33,32 +33,22 @@ llama2 = LlmTemplate(
 )
 
 llama3 = LlmTemplate(
-    template="""<|begin_of_text|>
-                <|start_header_id|>
-                system
-                <|end_header_id|>
-                {system_prompt}
-                <|eot_id|>
-                <|start_header_id|>
-                user
-                <|end_header_id|>
-                Answer the user question based on the context provided below
+    template="""{system_prompt}
+    
                 Context :{context} {img_description}
+                
                 Question: {question}
-                <|eot_id|>
-                <|start_header_id|>
-                assistant
-                <|end_header_id|>
                 """
 )
 
 llm_generic = LlmTemplate(
     template="""{system_prompt}
-
+            \n ------- \n
             {context}
             {img_description}
-
-            Question: {question}"""
+            \n ------- \n
+            Question: {question}
+            """
 )
 
 standalone_question= LlmTemplate(

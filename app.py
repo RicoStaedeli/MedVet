@@ -135,17 +135,6 @@ def generateragconversational(txtGen: MMGeneration):
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
         return {"result":"Failed"}
     
-@app.put("/ragconversational",tags=["Text Generation"])
-def ragconversational(load: Questions):
-    try:
-        response = mmService.call_Chain(load.prompt)
-        return {"Response":response}
-        
-    except Exception as e:
-        logger.error(f"Error during text generation: {e}")
-        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
-        return {"result":"Failed"}
-    
 
 @app.put("/ragdocs",tags=["Text Generation"])
 def getDocuments(load: Questions):
