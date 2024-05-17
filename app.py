@@ -4,7 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 #Utils
 from Utils.constants import MODE_DISPLAY, MODE_RAG
-from Utils.conversation import (default_conversation, conv_templates)
+from Utils.conversation import (conv_templates)
+from Utils.SystemPromptsMedVet import (systemprompt_templates)
+from Utils.LLMTemplates import (llm_templates)
 from Utils.logger import get_logger
 from Utils.config import load_config
 config = load_config("config/cfg.yaml")
@@ -112,6 +114,8 @@ def generateragconversational(txtGen: MMGeneration):
         max_new_tokens = txtGen.max_new_tokens
         temperature = txtGen.temperature
         chaintype = txtGen.chaintype
+        llm_template_name = txtGen.llm_template_name
+        mode_assistant = txtGen.mode_assistant
         
         if txtGen.display_combined:
             display_combined = MODE_DISPLAY.COMBINED
@@ -123,10 +127,18 @@ def generateragconversational(txtGen: MMGeneration):
         else:
             use_rag = MODE_RAG.NORAG
         
-        mode_assistant = txtGen.mode_assistant
-        mmService.set_assistantMode(mode_assistant)
         
-        response = mmService.generateAnswerConversionChainRAG(agent_id=agent_id, display_combined=display_combined, image=image, ip_address_llava=ip_address_llava,max_new_tokens=max_new_tokens, temperature=temperature,mode_assistant=mode_assistant, prompt_user=prompt,use_rag=use_rag,chaintype=chaintype )
+        response = mmService.generateAnswerConversionChainRAG(agent_id=agent_id, 
+                                                              display_combined=display_combined, 
+                                                              image=image, 
+                                                              ip_address_llava=ip_address_llava,
+                                                              max_new_tokens=max_new_tokens, 
+                                                              temperature=temperature,
+                                                              mode_assistant=mode_assistant, 
+                                                              prompt_user=prompt,
+                                                              use_rag=use_rag,
+                                                              llm_template_name = llm_template_name,
+                                                              chaintype=chaintype )
 
         return response
     
@@ -155,6 +167,43 @@ def ragconversational():
             if conv_templates[key].model_type == "langchain":
                 templates.append(key)
         return {"Response":templates}
+        
+    except Exception as e:
+        logger.error(f"Error during retrieving conversation templates {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
+
+@app.get("/systemprompttemplates",tags=["Text Generation"])
+def systemprompttemplates():
+    try:
+        templates = []
+        for key in systemprompt_templates.keys():
+            templates.append(key)
+        return {"Response":templates}
+        
+    except Exception as e:
+        logger.error(f"Error during retrieving conversation templates {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
+    
+@app.get("/llmtemplates",tags=["Text Generation"])
+def llmtemplates():
+    try:
+        templates = []
+        for key in llm_templates.keys():
+            templates.append(key)
+        return {"Response":templates}
+        
+    except Exception as e:
+        logger.error(f"Error during retrieving conversation templates {e}")
+        # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
+        return {"result":"Failed"}
+
+@app.get("/chaintypes",tags=["Text Generation"])
+def chaintypes():
+    try:
+        chaintypes = ['rag','plain','rag_history','rag_history_standalone']
+        return {"Response":chaintypes}
         
     except Exception as e:
         logger.error(f"Error during retrieving conversation templates {e}")

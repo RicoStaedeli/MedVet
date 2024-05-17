@@ -26,12 +26,13 @@ from operator import itemgetter
 #Utils
 from Utils.constants import MODE_DISPLAY, MODE_RAG
 from Utils.conversation import (default_conversation, conv_templates)
-from Utils.LLMTemplates import (default_template, templates)
+from Utils.SystemPromptsMedVet import (systemprompt_templates)
+from Utils.LLMTemplates import (llm_templates)
 from Utils.logger import get_logger
 from Utils.config import load_config
 config = load_config("config/cfg.yaml")
 logger = get_logger(__name__, config)
-template_name = "llama3"
+#template has to be set if the model changes
 
 from time import time
 
@@ -47,8 +48,8 @@ class MMLLMService:
         self.databaseWriter = DbWriter(config)
         
         model_path = config.get("model", {}).get("path")
-        llm = llamaModel.load_llm(model_path)
-        llm_standalone = llamaModel.load_llm(model_path)
+        self.llm = llamaModel.load_llm(model_path)
+        self.llm_standalone = llamaModel.load_llm(model_path)
         
         ragCreator = RAGCreator()
         self.retriever = ragCreator.getRetriever()
@@ -56,7 +57,7 @@ class MMLLMService:
         self.conversation = default_conversation.copy()        
 
         self.qaPipeline = RetrievalQA.from_chain_type(
-            llm=llm,
+            llm=self. llm,
             chain_type="stuff",
             retriever=self.retriever,
             return_source_documents=True,
@@ -66,10 +67,7 @@ class MMLLMService:
         self.conversation_langchain = conv_templates["simple_langchain_kb"].copy()
         self.conversation_template = "simple_langchain_kb"
         
-        self.chain_rag_history_standalone = self.buildChainForConversationalRAG_Standalone(llm_standalone=llm_standalone,llm=llm)    
-        self.chain_rag_history = self.buildChainForConversationalRAG(llm=llm)    
-        self.chain_rag = self.buildChainRAG(llm=llm)    
-        self.chain_plain = self.buildChainForPlainInference(llm=llm)
+
     
     def clear_history(self):
         self.conversation = default_conversation.copy() 
@@ -86,7 +84,6 @@ class MMLLMService:
             
             self.conversation_langchain = conv_templates[conversation_template].copy()
 
-            
             #legacy
             tempConversation = conv_templates[conversation_template].copy()
             tempConversation.messages = self.conversation.messages #copy chat history
@@ -328,32 +325,30 @@ class MMLLMService:
     #####################                               Chians                                          #############
     ################################################################################################################   
     
-    def buildChainForPlainInference(self,llm):
+    def buildChainForPlainInference(self,llm_template_name):
         '''
         This function creates a chain based on the answer prompt template. 
         No RAG. 
         '''
         
-        ANSWER_PROMPT = ChatPromptTemplate.from_template(templates[template_name].getTemplate())
-        
-                
+        ANSWER_PROMPT = ChatPromptTemplate.from_template(llm_templates[llm_template_name].getTemplate())
+              
         answer_chain = RunnableParallel({
             "system_prompt": lambda x: x["system_prompt"],
-            "answer": ANSWER_PROMPT | llm | StrOutputParser(),
+            "answer": ANSWER_PROMPT | self.llm | StrOutputParser(),
             "question": lambda x: x["question"],
-            "context": lambda x: x["context"],
             "img_description": lambda x: x["img_description"],
         })
         
         return answer_chain
     
 
-    def buildChainRAG(self,llm):
+    def buildChainRAG(self,llm_template_name):
         '''
         This chain uses a RAG pipeline to retrieve the most relevant documents for the submitted input. 
         '''
         #This template is used to create a standalone question  outcommented: Do the rephrase only if there is a chat history. / If the user asks about something you wrote given the following conversation and a follow up question. 
-        ANSWER_PROMPT = ChatPromptTemplate.from_template(templates[template_name].getTemplate())
+        ANSWER_PROMPT = ChatPromptTemplate.from_template(llm_templates[llm_template_name].getTemplate())
         
         self.DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
         
@@ -375,7 +370,7 @@ class MMLLMService:
 
         answer_chain = {
             "system_prompt": lambda x: x["system_prompt"],
-            "answer": final_inputs | ANSWER_PROMPT | llm | StrOutputParser(),
+            "answer": final_inputs | ANSWER_PROMPT | self.llm | StrOutputParser(),
             "question": itemgetter("question"),
             "context": final_inputs["context"],
             "sources": final_inputs["sources"],
@@ -387,13 +382,13 @@ class MMLLMService:
         return final_chain
     
     #ToDo use history
-    def buildChainForConversationalRAG(self,llm):
+    def buildChainForConversationalRAG(self,llm_template_name):
         '''
         THis chain creates a This chain uses a RAG pipeline to retrieve the most relevant documents for the submitted input. 
         Also it uses the conversion chat history. 
         '''
         #This template is used to create a standalone question  outcommented: Do the rephrase only if there is a chat history. / If the user asks about something you wrote given the following conversation and a follow up question. 
-        ANSWER_PROMPT = ChatPromptTemplate.from_template(templates[template_name].getTemplate())
+        ANSWER_PROMPT = ChatPromptTemplate.from_template(llm_templates[llm_template_name].getTemplate())
         
         self.DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
         
@@ -424,7 +419,7 @@ class MMLLMService:
 
         answer_chain = {
             "system_prompt": lambda x: x["system_prompt"],
-            "answer": final_inputs | ANSWER_PROMPT | llm | StrOutputParser(),
+            "answer": final_inputs | ANSWER_PROMPT | self.llm | StrOutputParser(),
             "question": itemgetter("question"),
             "context": final_inputs["context"],
             "sources": final_inputs["sources"],
@@ -436,16 +431,16 @@ class MMLLMService:
         return final_chain
   
        
-    def buildChainForConversationalRAG_Standalone(self,llm_standalone,llm):
+    def buildChainForConversationalRAG_Standalone(self,llm_template_name):
         '''
         This chain creates a standalone question based on the input and the complete chat history of the conversion.
         This standalone question is afterwards used to retrieve the relevant documents and the answer of the llm. 
         It uses a RAG pipeline.
         '''
         #This template is used to create a standalone question  outcommented: Do the rephrase only if there is a chat history. / If the user asks about something you wrote given the following conversation and a follow up question. 
-        CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(templates["standalone_question"].getTemplate())
+        CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llm_templates["standalone_question"].getTemplate())
         
-        ANSWER_PROMPT = ChatPromptTemplate.from_template(templates[template_name].getTemplate())
+        ANSWER_PROMPT = ChatPromptTemplate.from_template(llm_templates[llm_template_name].getTemplate())
         
         self.DEFAULT_DOCUMENT_PROMPT = PromptTemplate.from_template(template="{page_content}")
         
@@ -468,7 +463,7 @@ class MMLLMService:
                 "chat_history": lambda x: get_buffer_string(x["chat_history"]),
             }            
             | CONDENSE_QUESTION_PROMPT
-            | llm_standalone
+            | self.llm_standalone
             | StrOutputParser()
         }
         )
@@ -490,7 +485,7 @@ class MMLLMService:
 
         answer_chain = {
             "system_prompt": lambda x: x["system_prompt"],
-            "answer": final_inputs | ANSWER_PROMPT | llm | StrOutputParser(),
+            "answer": final_inputs | ANSWER_PROMPT | self.llm | StrOutputParser(),
             "question": itemgetter("question"),
             "context": final_inputs["context"],
             "sources": final_inputs["sources"],
@@ -504,7 +499,7 @@ class MMLLMService:
     
     
    
-    def call_Chain(self, question,image_description,chaintype):
+    def call_Chain(self, question,image_description,chaintype,systemprompt_template_name,llm_template_name):
         """
         Calls a conversational RAG (Retrieval-Augmented Generation) model to generate an answer to a given question.
 
@@ -525,34 +520,38 @@ class MMLLMService:
             img_description = ""
         
         #get the prompt template of the actual set conversion type
-        system_prompt = self.conversation_langchain.getPromptTemplate()
-        
+        system_prompt = systemprompt_templates[systemprompt_template_name].getPrompt()
         #build the inputs for the chains
+        
         inputs = {"question": question, "img_description": img_description, "system_prompt": system_prompt}
         
         #invoke the correct chain
         if(chaintype == "plain"):
-            inputs = {"question": question, "img_description": img_description, "system_prompt": system_prompt, "context": ""}
-            result = self.chain_plain.invoke(inputs)
+            chain_plain = self.buildChainForPlainInference(llm_template_name)
+            result = chain_plain.invoke(inputs)
+            
         elif(chaintype =="rag"):
-            result = self.chain_rag.invoke(inputs)
+            chain_rag = self.buildChainRAG(llm_template_name)  
+            result = chain_rag.invoke(inputs)
+            
         elif(chaintype =="rag_history"):
-            result = self.chain_rag_history.invoke(inputs)
+            chain_rag_history = self.buildChainForConversationalRAG(llm_template_name)
+            result = chain_rag_history.invoke(inputs)
+            
         else:
-            result = self.chain_rag_history_standalone.invoke(inputs)
-        
-        
-        # Save the current question and its answer to memory for future context
-        self.memory.save_context(inputs, {"answer": result["answer"]})
-        
+            chain_rag_history_standalone = self.buildChainForConversationalRAG_Standalone(llm_template_name)    
+            result = chain_rag_history_standalone.invoke(inputs)
+            # Save the current question and its answer to memory for future context
+            self.memory.save_context(inputs, {"answer": result["answer"]})        
         
         # Return the result
         return result
     
+    
     @traceable(
         run_type="llm",
         name="conversational_RAG",
-        project_name="MedVet Evaluation LLaMA 3"
+        project_name="MedVet FineTuned"
         # project_name="MedVet Demo Traces"
     )
     def generateAnswerConversionChainRAG(self, 
@@ -564,6 +563,7 @@ class MMLLMService:
                        image:str, 
                        ip_address_llava:str, 
                        chaintype:str, 
+                       llm_template_name:str, 
                        max_new_tokens, 
                        temperature):
         
@@ -572,7 +572,7 @@ class MMLLMService:
             print(f"Generate answer only with LlaMA")
             try:
                 prompt_llama = prompt_user
-                response_llama = self.call_Chain(question=prompt_llama,image_description="",chaintype=chaintype)
+                response_llama = self.call_Chain(question=prompt_llama,image_description="",chaintype=chaintype,llm_template_name=llm_template_name, systemprompt_template_name=mode_assistant)
                 self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava="", prompt_llama=prompt_llama, answer_llava="", answer_llama=response_llama["answer"], answer_combined = "", image = "", mode_display="", mode_assistant=mode_assistant, mode_rag=use_rag)
 
                 status = "OK"
@@ -598,7 +598,7 @@ class MMLLMService:
             print(f"Start generating Answer with LLaMA and LLaVa, display separate and with RAG")
             try:
                 prompt_llama = prompt_user
-                response_llama = self.call_Chain(question=prompt_llama,image_description="",chaintype=chaintype)
+                response_llama = self.call_Chain(question=prompt_llama,image_description="",chaintype=chaintype,llm_template_name=llm_template_name, systemprompt_template_name=mode_assistant)
                 
                 prompt_llava = self.formatPromptLlaVA(prompt_user)
                 response_llava = self.generateLLaVAresponse(image=image, ip_address_llava=ip_address_llava , max_new_tokens=max_new_tokens, prompt_llava=prompt_llava, temperature=temperature)
@@ -627,7 +627,7 @@ class MMLLMService:
                 
                 img_desc = response_llava["result"]
                 prompt_llama = prompt_user
-                response_llama = self.call_Chain(question=prompt_llama,image_description=img_desc,chaintype=chaintype)
+                response_llama = self.call_Chain(question=prompt_llama,image_description=img_desc,chaintype=chaintype,llm_template_name=llm_template_name, systemprompt_template_name=mode_assistant)
                 
                 
                 self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["answer"], answer_combined = response_llama["answer"], image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)

@@ -4,7 +4,7 @@ from typing import List
 
 @dataclasses.dataclass
 class LlmTemplate:
-    """A class that keeps all Templays"""
+    """A class that keeps all templates"""
     template: str
     
     
@@ -22,7 +22,7 @@ class LlmTemplate:
         }
 
 
-llama2 = LlmTemplate(
+llama2_RAG = LlmTemplate(
     template="""<s>[INST] <<SYS>> {system_prompt}<</SYS>> 
 
             {context}
@@ -32,11 +32,28 @@ llama2 = LlmTemplate(
             [/INST]"""
 )
 
-llama3 = LlmTemplate(
+llama2_plain = LlmTemplate(
+    template="""<s>[INST] <<SYS>> {system_prompt}<</SYS>> 
+            
+            {img_description}
+            Question: {question}
+            [/INST]"""
+)
+
+
+llama3_RAG = LlmTemplate(
     template="""{system_prompt}
     
                 Context :{context} {img_description}
                 
+                Question: {question}
+                """
+)
+
+llama3_plain = LlmTemplate(
+    template="""{system_prompt}
+                
+                {img_description}
                 Question: {question}
                 """
 )
@@ -64,16 +81,18 @@ standalone_question= LlmTemplate(
         """
 )
 
-default_template = llama2
+default_ll_template = llama2_plain
 
-templates = {
-    "default": llama2,
-    "llama3": llama3,
-    "llama2": llama2,
+llm_templates = {
+    "default": llama2_plain,
+    "llama3_RAG": llama3_RAG,
+    "llama3_plain": llama3_plain,
+    "llama2_plain": llama2_plain,
+    "llama2_RAG": llama2_RAG,
     "llm_generic":llm_generic,
     "standalone_question": standalone_question
 }
 
 
 if __name__ == "__main__":
-    print(default_template.getTemplate())
+    print(default_ll_template.getTemplate())
