@@ -518,7 +518,8 @@ class MMLLMService:
         
         # Prepare the input for the RAG model
         if(image_description != ""):
-            img_description = f"Description of provided imagge: \n {image_description}"
+            print(f"----> {image_description}")
+            img_description = f"Description of provided image: \n {image_description}"
         else:
             img_description = ""
         
@@ -641,8 +642,11 @@ class MMLLMService:
                 
                 
                 self.databaseWriter.insert_chat( agent_id=agent_id, prompt_user=prompt_user, prompt_llava=prompt_llava, prompt_llama=prompt_llama, answer_llava=response_llava["result"], answer_llama=response_llama["answer"], answer_combined = response_llama["answer"], image = image, mode_display=display_combined, mode_assistant=mode_assistant, mode_rag=use_rag)
-                
-                response = f"**Result combination of LlaVA- MEd and LlaMA with RAG**\n\n{response_llama['answer']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['sources'])}"
+                if "sources" in response_llama:                
+                    response = f"**Result combination of LlaVA- MEd and LlaMA with RAG**\n\n{response_llama['answer']}\n\n**Sources**\n\n{self.generateDocumentsmarkdown(response_llama['sources'])}"
+                else:
+                    response = f"**Result combination of LlaVA- MEd and LlaMA with RAG**\n\n{response_llama['answer']}"
+                    
                 status = "OK"
             
             except Exception as e: 
