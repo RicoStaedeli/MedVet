@@ -101,13 +101,27 @@ def clearchat():
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
         return {"result":"Failed"}
 
+def formatPrompt(conversation):
+    formatted_conversation = ""
+    last_user_message = ""
+
+    for entry in conversation:
+        if entry['role'] == 'assistant':
+            formatted_conversation += f"Assistant: {entry['content']}\n"
+        elif entry['role'] == 'user':
+            formatted_conversation += f"User: {entry['content']}\n"
+            last_user_message = entry['content']
+
+    return last_user_message, formatted_conversation
+
+
 @app.put("/generate",tags=["Text Generation"])
 def generateragconversational(txtGen: MMGeneration):
     # logger.info(f"Received request: {txtGen}")
-    try:
+    try:    
         #Set the prmompt
-        prompt = txtGen.prompt.replace('"', ' ').replace("'", ' ')
-        logger.info(f"replace disturbing characters and generate prompt: {prompt}")
+        mode_assistant = txtGen.mode_assistant
+        prompt,history = formatPrompt(txtGen.prompt)
         agent_id = txtGen.agent_id
         ip_address_llava = txtGen.ip_address_llava
         image = txtGen.img
@@ -115,7 +129,6 @@ def generateragconversational(txtGen: MMGeneration):
         temperature = txtGen.temperature
         chaintype = txtGen.chaintype
         llm_template_name = txtGen.llm_template_name
-        mode_assistant = txtGen.mode_assistant
         
         if txtGen.display_combined:
             display_combined = MODE_DISPLAY.COMBINED
@@ -136,6 +149,7 @@ def generateragconversational(txtGen: MMGeneration):
                                                               temperature=temperature,
                                                               mode_assistant=mode_assistant, 
                                                               prompt_user=prompt,
+                                                              history = history,
                                                               use_rag=use_rag,
                                                               llm_template_name = llm_template_name,
                                                               chaintype=chaintype )
@@ -191,7 +205,8 @@ def llmtemplates():
     try:
         templates = []
         for key in llm_templates.keys():
-            templates.append(key)
+            if llm_templates[key].show_for_user == 1:
+                templates.append(key)
         return {"Response":templates}
         
     except Exception as e:
@@ -202,7 +217,7 @@ def llmtemplates():
 @app.get("/chaintypes",tags=["Text Generation"])
 def chaintypes():
     try:
-        chaintypes = ['rag','plain','rag_history','rag_history_standalone']
+        chaintypes = ['rag','plain','rag_history_standalone']
         return {"Response":chaintypes}
         
     except Exception as e:

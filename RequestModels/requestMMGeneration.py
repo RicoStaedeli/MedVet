@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 class MMGeneration(BaseModel):
-    prompt: str
+    prompt: list
     agent_id: str
     ip_address_llava: str
     img: str
