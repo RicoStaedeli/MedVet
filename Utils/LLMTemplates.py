@@ -35,6 +35,7 @@ llama2_RAG = LlmTemplate(
             {chat_history}
 
             Context: {context}
+            
             {img_description}
 
             Question: {question}
@@ -49,6 +50,7 @@ llama2_plain = LlmTemplate(
             {chat_history}
             
             {img_description}
+            
             Question: {question}
             [/INST]""",
     show_for_user = 1,
@@ -59,6 +61,7 @@ llama2_plain_without_chathistory = LlmTemplate(
     template="""<s>[INST] <<SYS>> {system_prompt}<</SYS>> 
             
             {img_description}
+            
             Question: {question}
             [/INST]""",
     show_for_user = 0,
@@ -85,6 +88,7 @@ llama3_plain = LlmTemplate(
                 {chat_history}
                 
                 {img_description}
+                
                 Question: {question}
                 """,
     show_for_user = 1,
@@ -95,6 +99,7 @@ llama3_plain_without_chathistory = LlmTemplate(
     template="""{system_prompt}
                 
                 {img_description}
+                
                 Question: {question}
                 """,
     show_for_user = 0,

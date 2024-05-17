@@ -356,8 +356,8 @@ class MMLLMService:
   
         retrieved_documents = RunnableParallel({
             "system_prompt": lambda x: x["system_prompt"],
-            "docs": itemgetter("question") | self.retriever,
-            "question": RunnablePassthrough(),
+            "docs": lambda x: x["question"] | self.retriever,
+            "question": lambda x: x["question"],
             "chat_history":lambda x: x["chat_history"],
             "img_description":lambda x: x["img_description"],
         })
@@ -366,7 +366,7 @@ class MMLLMService:
             "system_prompt": lambda x: x["system_prompt"],
             "context": lambda x: self._combine_documents(x["docs"]),
             "sources": lambda x: self._sources_documents(x["docs"]),
-            "question": itemgetter("question"),
+            "question": lambda x: x["question"],
             "img_description": lambda x: x["img_description"],
             "chat_history": lambda x: x["chat_history"],
         }
@@ -374,7 +374,7 @@ class MMLLMService:
         answer_chain = {
             "system_prompt": lambda x: x["system_prompt"],
             "answer": final_inputs | ANSWER_PROMPT | self.llm | StrOutputParser(),
-            "question": itemgetter("question"),
+            "question": lambda x: x["question"],
             "context": final_inputs["context"],
             "sources": final_inputs["sources"],
             "img_description": final_inputs["img_description"]
@@ -518,7 +518,6 @@ class MMLLMService:
         
         # Prepare the input for the RAG model
         if(image_description != ""):
-            print(f"----> {image_description}")
             img_description = f"Description of provided image: \n {image_description}"
         else:
             img_description = ""
