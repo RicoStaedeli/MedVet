@@ -36,13 +36,13 @@ class RAGCreator:
 
     
     def getRetriever(self):
-        logger.info(f"Start creating new vectorstore")
         if  os.path.isdir('Database/chroma_db_rag'):
 
             vectordb = Chroma(persist_directory="Database/chroma_db_rag", embedding_function=self.embedding_function)
             retriever = vectordb.as_retriever(search_kwargs={"k": self.target_source_chunks})
             return retriever
         else:
+            logger.info(f"Start creating new vectorstore")
             texts = self.documentLoader.process_documents()
             vectordb = Chroma.from_documents(documents=texts, embedding=self.embeddings, persist_directory="Database/chroma_db_rag")
             logger.info(f"Ingestion complete")

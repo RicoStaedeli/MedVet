@@ -17,7 +17,7 @@ class LlamaForCausalRAG:
                 self.n_batch = 2048  # Should be between 1 and n_ctx, consider the amount of RAM of your Apple Silicon Chip.
                 self.n_ctx = 4096
             if self.device == "cuda":
-                logger.info(f"Load model with mps specific configuration")
+                logger.info(f"Load model with cuda specific configuration")
                 self.n_gpu_layers = -1 # The number of layers to put on the GPU. The rest will be on the CPU. If you don't know how many layers there are, you can use -1 to move all to GPU.
                 self.n_batch = 1024 # Should be between 1 and n_ctx, consider the amount of VRAM in your GPU.
                 self.n_ctx = 4096

@@ -12,7 +12,7 @@ model:
 
 acceleration:
   useGPU: True
-  GPU: mps 
+  GPU: cuda 
 
 RAG:
   source_path: ../assets/RAG Documents/
