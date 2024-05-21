@@ -217,7 +217,25 @@ class MMLLMService:
              
         return final_chain
   
-       
+    def generateLlama3context(history):
+        """
+        <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+        You are a helpful AI assistant for travel tips and recommendations<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+        What is France's capital?<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+        Bonjour! The capital of France is Paris!<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+        What can I do there?<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+        Paris, the City of Light, offers a romantic getaway with must-see attractions like the Eiffel Tower and Louvre Museum, romantic experiences like river cruises and charming neighborhoods, and delicious food and drink options, with helpful tips for making the most of your trip.<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+        Give me a detailed list of the attractions I should visit, and time it takes in each one, to plan my trip accordingly.<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+        """
+        return ""
+    
+    
     def buildChainForConversationalRAG_Standalone(self,llm_template_name):
         '''
         This chain creates a standalone question based on the input and the complete chat history of the conversion.
@@ -299,7 +317,7 @@ class MMLLMService:
         Returns:
         dict: A dictionary containing the generated answer from the RAG model.
         """
-        
+        print(history)
         # Prepare the input for the RAG model
         if(image_description != ""):
             img_description = f"Description of provided image: \n {image_description}"
@@ -375,8 +393,8 @@ class MMLLMService:
     
     @traceable(
         run_type="llm",
-        name="conversational_RAG",
-        project_name="MedVet FineTuned"
+        name="generate Answer",
+        project_name="Evaluation MedVet KB LLaMA 3 Finetuned"
         # project_name="MedVet Demo Traces"
     )
     def generateAnswerConversionChainRAG(self, 

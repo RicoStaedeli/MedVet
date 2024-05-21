@@ -46,7 +46,7 @@ class LlamaForCausalRAG:
                 f16_kv = True,  # MUST set to True, otherwise you will run into problem after a couple of calls
                 callback_manager = self.callback_manager,
                 max_tokens = 4096,
-                temperature = 0.9,
+                temperature = 0.7,
                 n_ctx = self.n_ctx, 
                 verbose = True,  # Verbose is required to pass to the callback manager
             )

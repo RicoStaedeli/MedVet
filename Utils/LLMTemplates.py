@@ -83,14 +83,21 @@ llama3_RAG = LlmTemplate(
 )
 
 llama3_plain = LlmTemplate(
-    template="""{system_prompt}
+    template="""{system_prompt}              
+    {chat_history}
+    {img_description}
                 
-                {chat_history}
-                
-                {img_description}
-                
-                Question: {question}
-                """,
+    Question: {question}""",
+    show_for_user = 1,
+    model_type="llama3"
+)
+
+llama3_plain_llamatemplate = LlmTemplate(
+    template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+{system_prompt} <|eot_id|><|start_header_id|>user<|end_header_id|>
+
+{chat_history}{img_description}{question}<|eot_id|><|start_header_id|>assistant<|end_header_id|>""",
     show_for_user = 1,
     model_type="llama3"
 )
@@ -143,6 +150,7 @@ llm_templates = {
     "llama2_RAG": llama2_RAG,
     "llama3_plain": llama3_plain,
     "llama3_RAG": llama3_RAG,
+    "llama3_plain_meta": llama3_plain_llamatemplate,
     "llm_generic":llm_generic,
     "standalone_question": standalone_question,
     "llama2_plain_without_chathistory": llama2_plain_without_chathistory,

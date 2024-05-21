@@ -5,14 +5,15 @@ model:
   name2: Meta-Llama-3-8B-Instruct-Q8_0
   name1: LLaMA-7b-chat
   name: Llama-2-7b-chat-medvet
+  name3: Llama-3-8b-instruct-medvet
   path1: ../model/Llama-2-7b-chat.gguf
-  path2: ../model/tiiuae-falcon-7b-Q6_K.gguf
   path3: ../model/Meta-Llama-3-8B-Instruct-Q8_0.gguf
-  path: ../model/Llama-2-7b-chat-medvet.gguf
+  path1: ../model/Llama-2-7b-chat-medvet.gguf
+  path: ../model/Llama-3-8b-instruct-medvet.gguf
 
 acceleration:
   useGPU: True
-  GPU: cuda 
+  GPU: mps 
 
 RAG:
   source_path: ../assets/RAG Documents/

@@ -57,7 +57,7 @@ async def read_root():
     return RedirectResponse(url='/docs')
 
    
-@app.put("/generatelagacy",tags=["Text Generation"])
+@app.put("/generatelagacy",tags=["Text Generation"], include_in_schema=False)
 def generate_answer(txtGen: MMGeneration):
     logger.info(f"Received request: {txtGen}")
     try:
@@ -106,7 +106,8 @@ def formatPrompt(conversation):
 
     for entry in conversation:
         if entry['role'] == 'assistant':
-            formatted_conversation += f"Assistant: {entry['content']}\n"
+            if(entry['content'] != "How may I assist you?"):
+                formatted_conversation += f"Assistant: {entry['content']}\n"
         elif entry['role'] == 'user':
             formatted_conversation += f"User: {entry['content']}\n"
             last_user_message = entry['content']
