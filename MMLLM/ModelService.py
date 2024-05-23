@@ -7,10 +7,8 @@ from LLM.RAGCreator import RAGCreator
 from Database.DbWriter import DbWriter
 
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.messages import HumanMessage
 
 
 from langchain.schema import format_document
@@ -24,15 +22,13 @@ from operator import itemgetter
 
 
 #Utils
-from Utils.constants import MODE_DISPLAY, MODE_RAG
-from Utils.conversation import (default_conversation, conv_templates)
+from Utils.constants import MODE_DISPLAY
 from Utils.SystemPromptsMedVet import (systemprompt_templates)
 from Utils.LLMTemplates import (llm_templates)
 from Utils.logger import get_logger
 from Utils.config import load_config
 config = load_config("config/cfg.yaml")
 logger = get_logger(__name__, config)
-#template has to be set if the model changes
 
 from time import time
 
@@ -41,9 +37,14 @@ from langsmith import traceable
 # export LANGCHAIN_API_KEY="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"
 
 class MMLLMService:
-    
+    '''
+    This class is the core of the solution. It represents the bridge from the user interaction to the different models.
+    The implemented chains use the loaded LLMs. 
+    The configuration of the used model can be done in the cfg.yaml file.
+    '''
     def __init__(self,config: dict) -> None:
         llamaModel = LlamaForCausalRAG(config,logger)
+        #If the model should be loaded from a HuggingFace format use the following line and comment the line above
         # llamaModel = LlamaForCausalRAGHF(config,logger)
         self.databaseWriter = DbWriter(config)
         
@@ -52,17 +53,7 @@ class MMLLMService:
         self.llm_standalone = llamaModel.load_llm(model_path)
         
         ragCreator = RAGCreator()
-        self.retriever = ragCreator.getRetriever() 
-
-   
-    def clear_history(self):
-        # self.conversation = default_conversation.copy() 
-        try:
-            #self.memory.clear()
-            print("If you want to delete uncoment above")
-        except:
-            logger.info("memory doesn't exist")
-                      
+        self.retriever = ragCreator.getRetriever()              
     
      
     ################################################################################################################

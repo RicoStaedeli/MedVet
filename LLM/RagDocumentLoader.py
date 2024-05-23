@@ -50,6 +50,9 @@ class ImgLoader:
             return doc
 
 class RagDocumentLoader():
+    '''
+    The RAG Document Loader is able to Load unstructured data and crete text chunks. 
+    '''
     
     def __init__(self, config: dict) -> None:
         self.source_directory = config.get("RAG", {}).get("source_path")

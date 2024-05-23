@@ -8,7 +8,11 @@ from time import time
 import torch
 
 class LlamaForCausalRAGHF:
-    
+    '''
+    This class is able to load a model in the Huggingface format. It is possible to use the model in full precision (not recommendend with a personal computer)
+    To use this class it has to be changed in the ModelServie.py
+    The class loads the model for the available GPU device. The device has to be set in the cfg.yaml file
+    '''
     def __init__(self,config,logger):
         # Callbacks support token-wise streaming
         self.callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])

@@ -16,6 +16,9 @@ config = load_config("config/cfg.yaml")
 logger = get_logger(__name__, config)
 
 class RAGCreator:
+    '''
+    The RAG Creator is the heart of the RAG system. This class embedds all the created test chunks and stores them in a vector database. 
+    '''
     def __init__(self):
         model_name = config.get("RAG", {}).get("EMBEDDINGS_MODEL_NAME")
         use_GPU = config.get("acceleration", {}).get("useGPU")

@@ -3,7 +3,12 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_community.llms import LlamaCpp
 
 class LlamaForCausalRAG:
-    
+    '''
+    This class is able to load a model from a GGUF file. 
+    GGUF models can be loaded with an Apple Silicon M2 or M3
+    This is the default to load a model and should not be changed.
+    The class loads the model for the available GPU device. The device has to be set in the cfg.yaml file
+    '''
     def __init__(self,config,logger):
         # Callbacks support token-wise streaming
         self.callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])

@@ -94,7 +94,7 @@ def generate_answer(txtGen: MMGeneration):
 @app.post("/clearchat",tags=["Text Generation"])
 def clearchat():
     try:
-        mmService.clear_history()
+        return {"result":"Succeded"}
     except Exception as e:
         logger.error(f"Error during text generation: {e}")
         # raise HTTPException(status_code=500, detail="Could not generate a text output. More details in the Logs.")
