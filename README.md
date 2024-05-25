@@ -30,6 +30,21 @@ Here's an overview of the project's directory structure:
   
 ## Installation of MedVet
 
+Create a new virtual environment
+```bash
+  # Create venv
+  python3 -m venv MedVetEnv
+  cd MedVetEnv
+  # activate env
+  source bin/activate
+  # Move to directory and clone repository
+  mkdir Project
+  cd Project
+  git clone https://github.com/RicoStaedeli/MedVet.git
+  cd MedVet
+```
+
+
 On Mac with Apple Silicon
 ```bash
   # Install requirements
@@ -55,4 +70,4 @@ On Linux with NVIDIA GPU
 
 ```
   
-After these installation the additional files can be downloaded from Google drive: 
+After these installation the additional files can be downloaded from Google drive: https://drive.google.com/drive/folders/1U04872Wu4TSKD3aL4hRy9mQPxuX0dqeQ
