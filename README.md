@@ -59,7 +59,7 @@ On Mac with Apple Silicon
   # Install distutils
   python3 -m pip install setuptools
 
-  # Install llama-cpp-python for 
+  # Install llama-cpp-python for Metal
   CMAKE_ARGS="-DLLAMA_METAL=on" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
 ```
 
@@ -68,7 +68,7 @@ On Linux with NVIDIA GPU
   # Install requirements
   pip install -r requirements.txt
 
-  # Install llama-cpp-python for 
+  # Install llama-cpp-python for cuBLAS
   CMAKE_ARGS="-DLLAMA_CUBLAS=on" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
 
 ```
