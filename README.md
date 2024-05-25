@@ -1,7 +1,8 @@
-#MedVet
+# MedVet
 Bachelor Thesis
 
-# Project Directory Structure
+------
+## Project Directory Structure
 
 Here's an overview of the project's directory structure:
 
@@ -27,4 +28,31 @@ Here's an overview of the project's directory structure:
     - `README.md`
   - `requirements.txt`
   
+## Installation of MedVet
+
+On Mac with Apple Silicon
+```bash
+  # Install requirements
+  pip install -r requirements.txt
+
+  # Install torch
+  pip3 install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+
+  # Install distutils
+  python3 -m pip install setuptools
+
+  # Install llama-cpp-python for 
+  CMAKE_ARGS="-DLLAMA_METAL=on" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
+```
+
+On Linux with NVIDIA GPU
+```bash
+  # Install requirements
+  pip install -r requirements.txt
+
+  # Install llama-cpp-python for 
+  CMAKE_ARGS="-DLLAMA_CUBLAS=on" FORCE_CMAKE=1 pip install --upgrade --force-reinstall llama-cpp-python --no-cache-dir
+
+```
   
+After these installation the additional files can be downloaded from Google drive: 
