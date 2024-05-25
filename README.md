@@ -9,6 +9,7 @@ This repository contains the backend for the complete solution.
 Here's an overview of the project's directory structure:
 
 - **Project-root/**
+  - **model/**: contains all available LLMs
   - **Assets/**: All assets for the project
     - **RAG Documents/**: Directory to store all documents used for the RAG system
       - **Cases/**: All cases scraped for RAG
