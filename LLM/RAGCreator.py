@@ -15,6 +15,7 @@ from Utils.config import load_config
 config = load_config("config/cfg.yaml")
 logger = get_logger(__name__, config)
 
+database_dir = '../Databases/chroma_db_rag'
 class RAGCreator:
     '''
     The RAG Creator is the heart of the RAG system. This class embedds all the created test chunks and stores them in a vector database. 
@@ -39,15 +40,15 @@ class RAGCreator:
 
     
     def getRetriever(self):
-        if  os.path.isdir('Database/chroma_db_rag'):
+        if  os.path.isdir(database_dir):
 
-            vectordb = Chroma(persist_directory="Database/chroma_db_rag", embedding_function=self.embedding_function)
+            vectordb = Chroma(persist_directory=database_dir, embedding_function=self.embedding_function)
             retriever = vectordb.as_retriever(search_kwargs={"k": self.target_source_chunks})
             return retriever
         else:
             logger.info(f"Start creating new vectorstore")
             texts = self.documentLoader.process_documents()
-            vectordb = Chroma.from_documents(documents=texts, embedding=self.embeddings, persist_directory="Database/chroma_db_rag")
+            vectordb = Chroma.from_documents(documents=texts, embedding=self.embeddings, persist_directory=database_dir)
             logger.info(f"Ingestion complete")
             retriever = vectordb.as_retriever(search_kwargs={"k": self.target_source_chunks})
             return retriever

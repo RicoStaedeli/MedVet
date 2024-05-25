@@ -121,7 +121,7 @@ class RagDocumentLoader():
         documents = self.load_documents(self.source_directory, ignored_files)
         if not documents:
             print("No new documents to load")
-            exit(0)
+            return
         print(f"Loaded {len(documents)} new documents from {self.source_directory}")
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
         texts = text_splitter.split_documents(documents)

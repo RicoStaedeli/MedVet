@@ -2,15 +2,18 @@ import sqlite3
 import datetime
 from Utils.logger import get_logger
 
+db_location = '../Databases/medvet_chat_db.sqlite'
+
 class DbWriter:
     '''
     This class handels the DB connection to SQLite. 
     '''
+    
     def __init__(self,config: dict):
         self.config = config
         self.logger = get_logger(__name__, config)
         self.logger.debug(f"Connect to Database")
-        conn = sqlite3.connect('Database/medvet_chat_db.sqlite')
+        conn = sqlite3.connect(db_location)
         cur = conn.cursor()
         #cur.execute('DROP TABLE IF EXISTS chatHistory')
         self.logger.debug(f"Create Table if not exists")
@@ -22,7 +25,7 @@ class DbWriter:
 
     def insert_chat(self, agent_id, prompt_user, prompt_llava, prompt_llama, answer_llava, answer_llama, answer_combined, image, mode_display, mode_assistant, mode_rag ):
         try:
-            connection = sqlite3.connect('Database/medvet_chat_db.sqlite')
+            connection = sqlite3.connect(db_location)
             cur = connection.cursor()
             sqlite_insert_query = '''INSERT INTO chatHistory (creationDate, agent_id, prompt_user, prompt_llava, prompt_llama, answer_llava, answer_llama, answer_combined, image, mode_display, mode_assistant, mode_rag ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ? )'''
             creationDate = datetime.datetime.now()
@@ -39,7 +42,7 @@ class DbWriter:
         return False
 
     def find(self,id_chat):
-        connection = sqlite3.connect('Database/medvet_chat_db.sqlite')
+        connection = sqlite3.connect(db_location)
         cur = connection.cursor()
         sqlite_select_query = f"""SELECT * FROM chatHistory WHERE id_chat={id_chat}"""
         self.logger.debug(f'Execute query: {sqlite_select_query}')
@@ -50,7 +53,7 @@ class DbWriter:
         return entry
     
     def find_by_agentId(self,agent_id):
-        connection = sqlite3.connect('Database/medvet_chat_db.sqlite')
+        connection = sqlite3.connect(db_location)
         cur = connection.cursor()
         sqlite_select_query = f"""SELECT * FROM chatHistory WHERE agent_id='{agent_id}'"""
         self.logger.debug(f'Execute query: {sqlite_select_query}')
