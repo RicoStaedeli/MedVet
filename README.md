@@ -1,5 +1,7 @@
 # MedVet
-Bachelor Thesis
+This is the main repository of the developed prototype called MedVet. The solution represents a state of the art implementation of Large Language Models with LangChain and llama.cpp. 
+The implemented RAG system is able to generate answers based on embeded documents. 
+This repository contains the backend for the complete solution.
 
 ------
 ## Project Directory Structure
@@ -51,6 +53,7 @@ On Mac with Apple Silicon
   pip install -r requirements.txt
 
   # Install torch
+  pip3 uninstall torch torchvision
   pip3 install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
 
   # Install distutils
@@ -71,3 +74,14 @@ On Linux with NVIDIA GPU
 ```
   
 After these installation the additional files can be downloaded from Google drive: https://drive.google.com/drive/folders/1U04872Wu4TSKD3aL4hRy9mQPxuX0dqeQ
+
+Next: To use the multimodal model LLaVA-Med the installation setup of this repo has to be done: https://github.com/RicoStaedeli/llava-medvet.git
+
+## Run 
+Navigate to the MedVet folder 
+
+```bash
+  uvicorn app:app
+```
+
+The application start at localhost `127.0.0.1:8000`
