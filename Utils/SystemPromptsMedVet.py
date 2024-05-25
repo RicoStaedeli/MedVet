@@ -35,6 +35,11 @@ simple_case= SystemPromptsMedVet(
     model_type = "langchain"
 )
 
+detailed_kb= SystemPromptsMedVet(
+    system="""You are an intelligent assistant designed to be a knowledge base for veterinarians. Write at least 7 sentences. Answer with different steps to explain what you were asked. Be very detailed and specific. """,
+    model_type = "langchain"
+)
+
 
 # default_conversation = simple_conv_Llama_casesolver
 default_template = simple_kb
@@ -43,6 +48,7 @@ systemprompt_templates = {
     "default": simple_kb,
     "simple_case": simple_case,
     "simple_kb": simple_kb,
+    "detailed_kb": detailed_kb
 }
 
 if __name__ == "__main__":
