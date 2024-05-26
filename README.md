@@ -15,7 +15,7 @@ Here's an overview of the project's directory structure:
       - **Cases/**: All cases scraped for RAG
       - **Docs/**: All other documents 
       - **Knowledge Base/**: Additional documents
-  - **Database/**: Source code.
+  - **Databases/**: All databasses for MedVet
     - **chroma_db_rag/**: ChromaDB with embedded vectore store
     - **medvet_chat_db.sqlite**: SQLite database to store all conversations with MedVet
   - **Medvet/**: backend application of MedVet
